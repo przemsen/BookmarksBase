@@ -6,7 +6,7 @@
 
 In application package you get:
 
-- `BookmarksBase.Importer` &mdash;** First run this tool** to generate database of bookmarks along with their contents. It produces `bookmarksbase.xml` file. If everything works fine, it will print long list of addresses followed by: 
+- `BookmarksBase.Importer` &mdash; **First run this tool** to generate database of bookmarks along with their contents. It produces `bookmarksbase.xml` file. If everything works fine, it will print long list of addresses followed by: 
 
 > bookmarksbase.xml file saved
 
