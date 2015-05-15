@@ -17,7 +17,7 @@ In application package you get:
 - `x64` and `x86` folders &mdash; Folders with runtime libraries required by the importer.
 - `System.Data.SQLite.dll` &mdash; Runtime library required by the importer.
 
-**[Download link](http://lynx.isc.org/ "Lynx")**
+**[Download link](https://onedrive.live.com/redir?resid=495E1D8A1F5853EC!11772&authkey=!AEwNPPYHsQnS3bA&ithint=file%2czip)**
 
 # 2. Changelog #
 
