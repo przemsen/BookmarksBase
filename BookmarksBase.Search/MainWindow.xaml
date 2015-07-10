@@ -61,7 +61,7 @@
             <ListBox Grid.Row="0"
                      Grid.ColumnSpan="2"
                      ItemsSource="{Binding}"
-                     IsSynchronizedWithCurrentItem="False"
+                     IsSynchronizedWithCurrentItem="True"
                      Margin="0,4,0,0"
                      Foreground="Blue"
                      x:Name="UrlLst"

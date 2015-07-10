@@ -20,7 +20,6 @@ namespace BookmarksBase.Importer
             Trace.WriteLine("Default importer: Fierfox");
 
             BookmarksImporter.Options opts = new BookmarksImporter.Options();
-            //opts.SockProxyFriendly = true; // TODO
             if (args.Any())
             {
                 if (args[0] == "--socksproxyfriendly")
