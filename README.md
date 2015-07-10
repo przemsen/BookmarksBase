@@ -26,6 +26,8 @@ Current state of source code may be newer than version of application in precomp
 - Improved concurrency while downloading sites
 - Regex support
 - Small improvements in BookmarksBase.Search interface
+- Logging importer output written to file
+- Erroneous urls are now printed at the end of the log 
 
 ## 1.0.0 &mdash; 2015-05-16 ##
 

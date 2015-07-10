@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,10 +21,10 @@ namespace BookmarksBase.Importer
             string dbFile = GetFirefoxBookmarksFile();
             if (dbFile == string.Empty)
             {
-                Console.WriteLine("Firefox bookmarks file has not been found");
+                Trace.WriteLine("Firefox bookmarks file has not been found");
                 return null;
             }
-            Console.WriteLine("Firefox bookmarks file found: " + dbFile);
+            Trace.WriteLine("Firefox bookmarks file found: " + dbFile);
             string cs = @"Data Source=" + dbFile + ";Version=3;";
             List<Bookmark> list = new List<Bookmark>();
             using (SQLiteConnection con = new SQLiteConnection(cs))
@@ -43,7 +44,7 @@ namespace BookmarksBase.Importer
                     }
                 }
             }
-            Console.WriteLine(list.Count + " bookmarks read");
+            Trace.WriteLine(list.Count + " bookmarks read");
             return list;
         }
 

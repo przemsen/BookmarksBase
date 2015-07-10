@@ -13,6 +13,8 @@ namespace BookmarksBase.Importer
     public abstract class BookmarksImporter
     {
         private readonly Options _options;
+        private readonly object _lck;
+        private readonly List<string> _errLog;
 
         public abstract IList<Bookmark> GetBookmarks();
 
@@ -23,6 +25,8 @@ namespace BookmarksBase.Importer
                 throw new FileNotFoundException("Required Lynx files were not found");
             }
             _options = options;
+            _lck = new object();
+            _errLog = new List<string>();
         }
 
         public string Lynx(string url)
@@ -34,7 +38,7 @@ namespace BookmarksBase.Importer
                 using (var webClient = new BookmarksBaseWebClient(_options))
                 {
                     rawData = webClient.DownloadData(url);
-                    Console.WriteLine("OK: " + url);
+                    Trace.WriteLine("OK: " + url);
                     if
                     (
                         !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
@@ -62,13 +66,16 @@ namespace BookmarksBase.Importer
             }
             catch (WebException we)
             {
-                if (we.Status == WebExceptionStatus.ProtocolError)
+                lock (_lck)
                 {
-                    Console.WriteLine("ERROR: " + url + " " + ((HttpWebResponse)we.Response).StatusCode.ToString());
-                }
-                else
-                {
-                    Console.WriteLine("ERROR: " + url + " " + we.Status.ToString());
+                    if (we.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        _errLog.Add("ERROR: " + url + " " + ((HttpWebResponse)we.Response).StatusCode.ToString());
+                    }
+                    else
+                    {
+                        _errLog.Add("ERROR: " + url + " " + we.Status.ToString());
+                    }
                 }
                 result = "[Error]";
             }
@@ -82,6 +89,11 @@ namespace BookmarksBase.Importer
                 b.Contents = Task.Factory.StartNew<string>(() => Lynx(b.Url));
             }
             Task.WaitAll(list.Select(b => b.Contents).ToArray());
+            if (_errLog.Any())
+            {
+                _errLog.ForEach(e => { Trace.WriteLine(e); });
+                _errLog.Clear();
+            }
         }
 
         public void SaveBookmarksBase(IList<Bookmark> list, string outputFile = "bookmarksbase.xml")
@@ -113,7 +125,7 @@ namespace BookmarksBase.Importer
                 }
                 writer.WriteEndElement();
             }
-            Console.WriteLine(outputFile + " saved");
+            Trace.WriteLine(outputFile + " saved");
         }
 
         private bool VerifyLynxDependencies()

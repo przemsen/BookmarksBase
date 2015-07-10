@@ -30,6 +30,7 @@ namespace BookmarksBase.Importer
                 request.MaximumAutomaticRedirections = 100;
                 request.CookieContainer = new CookieContainer();
                 request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0";
+                request.Timeout = 5000;
             }
 
             return request;

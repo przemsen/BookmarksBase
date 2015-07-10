@@ -15,7 +15,9 @@ namespace BookmarksBase.Importer
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Default importer: Fierfox");
+            SetupTrace();
+
+            Trace.WriteLine("Default importer: Fierfox");
 
             BookmarksImporter.Options opts = new BookmarksImporter.Options();
             //opts.SockProxyFriendly = true; // TODO
@@ -27,7 +29,7 @@ namespace BookmarksBase.Importer
                 }
                 else
                 {
-                    Console.WriteLine("Unrecognized option: " + args[0]);
+                    Trace.WriteLine("Unrecognized option: " + args[0]);
                     System.Environment.Exit(1);
                 }
             }
@@ -39,7 +41,7 @@ namespace BookmarksBase.Importer
             }
             catch (FileNotFoundException e)
             {
-                Console.WriteLine(e.Message);
+                Trace.WriteLine(e.Message);
                 System.Environment.Exit(1);
             }
 
@@ -51,8 +53,17 @@ namespace BookmarksBase.Importer
             fbi.LoadContents(bookmarks);
             fbi.SaveBookmarksBase(bookmarks);
 
-            Console.WriteLine("Press any key to continue...");
+            Trace.WriteLine("Press any key to continue...");
             Console.ReadKey();
+        }
+
+        private static void SetupTrace()
+        {
+            TextWriterTraceListener tr1 = new TextWriterTraceListener(System.Console.Out);
+            TextWriterTraceListener tr2 = new TextWriterTraceListener(System.IO.File.CreateText("log.txt"));
+            Trace.Listeners.Add(tr1);
+            Trace.Listeners.Add(tr2);
+            Trace.AutoFlush = true;
         }
     }
 
