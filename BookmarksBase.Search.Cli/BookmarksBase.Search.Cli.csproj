@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BookmarksBase.Browser.Cli</RootNamespace>
-    <AssemblyName>b</AssemblyName>
+    <AssemblyName>BookmarksBase.Search.Cli</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

@@ -31,12 +31,7 @@ namespace BookmarksBase.Search
         public MainWindow()
         {
             InitializeComponent();
-            _bookmarksEngine = new BookmarksBaseSearchEngine(
-                new BookmarksBaseSearchEngine.Options()
-                {
-                    ExcerptContextLength = 50
-                }
-            );
+            _bookmarksEngine = new BookmarksBaseSearchEngine();
             try
             {
                 _bookmarks = _bookmarksEngine.GetBookmarks();
@@ -54,17 +49,32 @@ namespace BookmarksBase.Search
             FindTxt.Focus();
         }
 
-        private void SearchBtn_Click(object sender, RoutedEventArgs e)
-        {
-            DataContext = _bookmarksEngine.DoSearch(_bookmarks, FindTxt.Text);
-        }
-
         private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
             if (currentBookmark == null) return;
             System.Diagnostics.Process.Start(currentBookmark.Url);
         }
+
+        private void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
+                if (currentBookmark == null) return;
+                System.Diagnostics.Process.Start(currentBookmark.Url);
+            }
+        }
+
+        private void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                DataContext = _bookmarksEngine.DoSearch(_bookmarks, FindTxt.Text);
+            }
+        }
+
+
 
     }
 }

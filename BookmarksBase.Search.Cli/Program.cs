@@ -29,12 +29,7 @@ namespace BookmarksBase.Search.Cli
                 }
             }
 
-            var bookmarksEngine = new BookmarksBaseSearchEngine(
-                new BookmarksBaseSearchEngine.Options()
-                {
-                    ExcerptContextLength = 40
-                }
-            );
+            var bookmarksEngine = new BookmarksBaseSearchEngine();
 
             var bookmarks = bookmarksEngine.GetBookmarks();
 

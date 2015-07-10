@@ -2,17 +2,17 @@
         x:Name="winMain"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BookmarksBase Search 1.0.0"
+        Title="BookmarksBase Search v. 1.1"
         Height="392.308"
         Width="578.846"
         WindowStartupLocation="CenterScreen"
-        Icon="icon.ico"
+        Icon="icon.ico" IsTabStop="False"
 >
 
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
             <GradientStop Color="#FFC9ECF3" Offset="1"/>
-            <GradientStop Offset="0" Color="#FF4B77EC"/>
+            <GradientStop Offset="0" Color="#FFB3C0E2"/>
         </LinearGradientBrush>
     </Window.Background>
 
@@ -35,40 +35,40 @@
                      Background="#FFFBFBE9"
                      VerticalContentAlignment="Center"
                      ToolTip="Type text to search for"
+                     TabIndex="1"
+                     PreviewKeyDown="FindTxt_PreviewKeyDown"
+                     Grid.ColumnSpan="2"
             />
-            <Button x:Name="SearchBtn"
-                    Height="30"
-                    Width="Auto"
-                    Grid.Column="1"
-                    Click="SearchBtn_Click"
-                    IsDefault="True"
-                    Margin="3,0,0,0"
-            >
-                Search
-            </Button>
+
         </Grid>
 
         <TextBox Grid.Row="1"
                  Height="28"
                  IsReadOnly="True"
+                 Background="#FFF3FDFF"
                  Text="{Binding Title}"
                  FontWeight="Bold"
                  VerticalContentAlignment="Center"
+                 IsTabStop="False"
+                 Focusable="False"
         />
 
         <Grid Grid.Row="2"  >
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"  />
-                <RowDefinition Height="50"  />
+                <RowDefinition Height="40"  />
             </Grid.RowDefinitions>
             <ListBox Grid.Row="0"
                      Grid.ColumnSpan="2"
                      ItemsSource="{Binding}"
-                     IsSynchronizedWithCurrentItem="True"
+                     IsSynchronizedWithCurrentItem="False"
                      Margin="0,4,0,0"
                      Foreground="Blue"
                      x:Name="UrlLst"
                      MouseDoubleClick="UrlLst_MouseDoubleClick"
+                     IsTabStop="True"
+                     TabIndex="2"
+                     PreviewKeyDown="UrlLst_PreviewKeyDown"
                      >
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -82,15 +82,17 @@
 
             <TextBox Text="{Binding ContentExcerpt}"
                      Background="#FFF3FDFF"
-                     Height="60"
+                     Height="40"
                      Grid.Row="1"
                      Margin="0,5,0,0"
                      FontFamily="Consolas"
                      Focusable="False"
                      IsReadOnly="True"
                      Grid.ColumnSpan="2"
-                     FontSize="14"
+                     FontSize="13"
                      TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     IsTabStop="False"
             />
         </Grid>
 

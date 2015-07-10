@@ -27,7 +27,6 @@ namespace BookmarksBase.Importer
 
         public string Lynx(string url)
         {
-            Console.WriteLine("OK: " + url);
             String result = String.Empty;
             Byte[] rawData = null;
             try
@@ -35,6 +34,7 @@ namespace BookmarksBase.Importer
                 using (var webClient = new BookmarksBaseWebClient(_options))
                 {
                     rawData = webClient.DownloadData(url);
+                    Console.WriteLine("OK: " + url);
                     if
                     (
                         !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
@@ -64,11 +64,11 @@ namespace BookmarksBase.Importer
             {
                 if (we.Status == WebExceptionStatus.ProtocolError)
                 {
-                    Console.WriteLine("Error downloading: " + url + " " + ((HttpWebResponse)we.Response).StatusCode.ToString());
+                    Console.WriteLine("ERROR: " + url + " " + ((HttpWebResponse)we.Response).StatusCode.ToString());
                 }
                 else
                 {
-                    Console.WriteLine("Error downloading: " + url + " " + we.Status.ToString());
+                    Console.WriteLine("ERROR: " + url + " " + we.Status.ToString());
                 }
                 result = "[Error]";
             }
@@ -77,12 +77,11 @@ namespace BookmarksBase.Importer
 
         public void LoadContents(IList<Bookmark> list)
         {
-            Parallel.ForEach(list,
-                bookmark =>
-                {
-                    bookmark.Contents = Lynx(bookmark.Url);
-                }
-            );
+            foreach (var b in list)
+            {
+                b.Contents = Task.Factory.StartNew<string>(() => Lynx(b.Url));
+            }
+            Task.WaitAll(list.Select(b => b.Contents).ToArray());
         }
 
         public void SaveBookmarksBase(IList<Bookmark> list, string outputFile = "bookmarksbase.xml")
@@ -108,7 +107,7 @@ namespace BookmarksBase.Importer
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("Content");
-                    writer.WriteString(bookmark.Contents);
+                    writer.WriteString(bookmark.Contents.Result);
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                 }
@@ -138,7 +137,7 @@ namespace BookmarksBase.Importer
         {
             public string Url { get; set; }
             public string Title { get; set; }
-            public string Contents { get; set; }
+            public Task<string> Contents { get; set; }
         }
 
         public class Options

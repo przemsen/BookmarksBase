@@ -10,12 +10,10 @@ namespace BookmarksBase.Search.Engine
 {
     public class BookmarksBaseSearchEngine
     {
-        private readonly Options _options;
         private readonly Regex   _deleteWhiteSpaceAtBeginningRegex;
 
-        public BookmarksBaseSearchEngine(Options options)
+        public BookmarksBaseSearchEngine()
         {
-            _options = options;
             _deleteWhiteSpaceAtBeginningRegex = new Regex(@"^\s+", RegexOptions.Compiled);
         }
 
@@ -27,28 +25,38 @@ namespace BookmarksBase.Search.Engine
             return bookmarks;
         }
 
-        public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<XElement> bookmarks, string find)
+        public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<XElement> bookmarks, string pattern)
         {
-            var result = from b in bookmarks
-                         let foundInContent = b
-                            .Element("Content")
-                            .Value
-                            .IndexOf(find, StringComparison.OrdinalIgnoreCase)
-                         let foundInUrl = b
-                            .Element("Url")
-                            .Value
-                            .IndexOf(find, StringComparison.OrdinalIgnoreCase)
-                         let foundInTitle = b
-                            .Element("Title")
-                            .Value
-                            .IndexOf(find, StringComparison.OrdinalIgnoreCase)
-                         where
-                            (foundInContent != BookmarkSearchResult.NotFound) ||
-                            (foundInUrl != BookmarkSearchResult.NotFound) ||
-                            (foundInTitle != BookmarkSearchResult.NotFound)
-                         select
-                         GetBookmarkSearchResult(b, foundInContent)
-                         ;
+            pattern = string.Format("^.*{0}.*$", pattern);
+            var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            var result = new List<BookmarkSearchResult>();
+
+            foreach (var b in bookmarks)
+            {
+                var match = regex.Match(b.Element("Content").Value);
+                if (match.Success)
+                {
+                    result.Add(new BookmarkSearchResult
+                        {
+                            Title = b.Element("Title").Value,
+                            ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(match.Value, string.Empty),
+                            Url = b.Element("Url").Value
+                        }
+                    );
+                    continue;
+                }
+                match = regex.Match(b.Element("Url").Value + b.Element("Title").Value);
+                if (match.Success)
+                {
+                    result.Add(new BookmarkSearchResult
+                        {
+                            Title = b.Element("Title").Value,
+                            Url = b.Element("Url").Value
+                        }
+                    );
+                    continue;
+                }
+            }
             return result;
         }
 
@@ -56,38 +64,17 @@ namespace BookmarksBase.Search.Engine
         {
             var result = from b in bookmarks
                          where b.Element("Content").Value == "[Error]"
-                         select
-                         GetBookmarkSearchResult(b, foundInContent: BookmarkSearchResult.NotFound)
+                         select new BookmarkSearchResult
+                         {
+                            Title = b.Element("Title").Value,
+                            Url = b.Element("Url").Value
+                         }
                          ;
-            return result;
-        }
-
-        private BookmarkSearchResult GetBookmarkSearchResult(XElement bookmark, int foundInContent)
-        {
-            var result = new BookmarkSearchResult();
-
-            result.Url = bookmark.Element("Url").Value;
-            if (foundInContent != BookmarkSearchResult.NotFound)
-            {
-                result.ContentExcerpt =
-                    bookmark
-                        .Element("Content")
-                        .Value.Substring(
-                            (foundInContent - _options.ExcerptContextLength) < 0 ? 0 : (foundInContent - _options.ExcerptContextLength)
-                        )
-                        .Take(_options.ExcerptContextLength * 2)
-                        .AsString()
-                        .Replace("\n", string.Empty);
-                result.ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(result.ContentExcerpt, string.Empty);
-            }
-            result.Title = bookmark.Element("Title").Value;
-
             return result;
         }
 
         public class Options
         {
-            public int ExcerptContextLength { get; set; }
         }
 
     }
@@ -100,12 +87,5 @@ namespace BookmarksBase.Search.Engine
         public const int NotFound = -1;
     }
 
-    public static class Extensions
-    {
-        public static string AsString(this IEnumerable<char> value)
-        {
-            return string.Join(string.Empty, value);
-        }
-    }
 
 }
