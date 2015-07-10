@@ -30,33 +30,40 @@ namespace BookmarksBase.Search.Engine
             pattern = string.Format("^.*{0}.*$", pattern);
             var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
             var result = new List<BookmarkSearchResult>();
+            var lck = new Object();
 
-            foreach (var b in bookmarks)
+            Parallel.ForEach(bookmarks, b =>
             {
                 var match = regex.Match(b.Element("Content").Value);
                 if (match.Success)
                 {
-                    result.Add(new BookmarkSearchResult
+                    lock (lck)
+                    {
+                        result.Add(new BookmarkSearchResult
                         {
                             Title = b.Element("Title").Value,
                             ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(match.Value, string.Empty),
                             Url = b.Element("Url").Value
-                        }
-                    );
-                    continue;
+                        });
+                    }
                 }
-                match = regex.Match(b.Element("Url").Value + b.Element("Title").Value);
-                if (match.Success)
+                else
                 {
-                    result.Add(new BookmarkSearchResult
+                    match = regex.Match(b.Element("Url").Value + b.Element("Title").Value);
+                    if (match.Success)
+                    {
+                        lock (lck)
                         {
-                            Title = b.Element("Title").Value,
-                            Url = b.Element("Url").Value
+                            result.Add(new BookmarkSearchResult
+                            {
+                                Title = b.Element("Title").Value,
+                                Url = b.Element("Url").Value
+                            });
                         }
-                    );
-                    continue;
+                    }
                 }
-            }
+            });
+
             return result;
         }
 

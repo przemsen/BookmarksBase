@@ -69,7 +69,11 @@
                      IsTabStop="True"
                      TabIndex="2"
                      PreviewKeyDown="UrlLst_PreviewKeyDown"
+                     Focusable="False"
                      >
+
+                <!-- Without Focusable=False ListBox gains separate focus and its items also gain focus -->
+
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
