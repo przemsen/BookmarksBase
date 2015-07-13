@@ -27,7 +27,7 @@ namespace BookmarksBase.Search.Engine
 
         public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<XElement> bookmarks, string pattern)
         {
-            pattern = string.Format("^.*{0}.*$", pattern);
+            pattern = SanitizePattern(pattern);
             var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
             var result = new List<BookmarkSearchResult>();
             var lck = new Object();
@@ -65,6 +65,28 @@ namespace BookmarksBase.Search.Engine
             });
 
             return result;
+        }
+
+        private static string SanitizePattern(string pattern)
+        {
+            if (pattern.IndexOf("++") != -1)
+            {
+                pattern = pattern.Replace("++", @"\+\+");
+            }
+            else if (pattern.IndexOf("**") != -1)
+            {
+                pattern = pattern.Replace("**", @"\*\*");
+            }
+            else if (pattern.IndexOf("$$") != -1)
+            {
+                pattern = pattern.Replace("$$", @"\$\$");
+            }
+            else if (pattern.IndexOf("##") != -1)
+            {
+                pattern = pattern.Replace("##", @"\#\#");
+            }
+            pattern = string.Format("^.*{0}.*$", pattern);
+            return pattern;
         }
 
         public IEnumerable<BookmarkSearchResult> DoDeadSearch(IEnumerable<XElement> bookmarks)

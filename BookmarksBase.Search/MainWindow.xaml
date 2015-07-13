@@ -9,6 +9,17 @@
         Icon="icon.ico" IsTabStop="False"
 >
 
+    <Window.Resources>
+        <Style x:Key="InitMsgStyle" TargetType="{x:Type Control}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DisplayHelp}" Value="True">
+                    <Setter Property="Foreground" Value="#FFAEAEAE" />
+                    <Setter Property="FontStyle" Value="Italic" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
             <GradientStop Color="#FFC9ECF3" Offset="1"/>
@@ -29,20 +40,25 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="80" />
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="FindTxt"
-                     Height="28"
-                     Grid.Column="0"
-                     Background="#FFFBFBE9"
-                     VerticalContentAlignment="Center"
-                     ToolTip="Type text to search for"
-                     TabIndex="1"
-                     PreviewKeyDown="FindTxt_PreviewKeyDown"
-                     Grid.ColumnSpan="2"
-            />
+
+            <AdornerDecorator Grid.ColumnSpan="2">
+                <TextBox x:Name="FindTxt"
+                         Height="28"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Type text to search for"
+                         TabIndex="1"
+                         PreviewKeyDown="FindTxt_PreviewKeyDown"
+                         Text="Type the text to search for within the bookmarks..."
+                         Style="{StaticResource InitMsgStyle}"
+                         GotFocus="FindTxt_GotFocus"
+                    >
+                </TextBox>
+            </AdornerDecorator>
 
         </Grid>
 
-        <TextBox Grid.Row="1"
+        <TextBox x:Name="TitleTxt"
+                 Grid.Row="1"
                  Height="28"
                  IsReadOnly="True"
                  Background="#FFF3FDFF"

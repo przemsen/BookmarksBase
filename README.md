@@ -18,9 +18,18 @@ In application package you get:
 
 **[Download link](http://1drv.ms/1LWwROU)**
 
+- You can use TAB to switch between search box and results list
+- You can move up and down using keyboard when results list is focused
+- Search is case insentive and a text you enter is compiled as a regular expression
+- If you wish to express any number of any characters use `.*`
+
 # 2. Changelog #
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
+
+## 1.1.1 &mdash; 2015-07-13 ##
+- Proper error handling on regex error
+- Minor UI improvements
 
 ## 1.1.0 &mdash; 2015-07-11 ##
 - Improved concurrency while downloading sites

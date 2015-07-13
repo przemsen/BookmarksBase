@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Xml.Linq;
 
 using BookmarksBase.Search.Engine;
+using System.Windows.Controls.Primitives;
 
 namespace BookmarksBase.Search
 {
@@ -25,6 +26,14 @@ namespace BookmarksBase.Search
     {
         private BookmarksBaseSearchEngine _bookmarksEngine;
         private IEnumerable<XElement> _bookmarks;
+
+        public static readonly DependencyProperty DisplayHelp =
+            DependencyProperty.Register(
+                "DisplayHelp",
+                typeof(bool),
+                typeof(Window),
+                new FrameworkPropertyMetadata(true)
+            );
 
         public IEnumerable<BookmarkSearchResult> ViewModel { get; set; }
 
@@ -46,7 +55,9 @@ namespace BookmarksBase.Search
                 );
                 Application.Current.Shutdown();
             }
-            FindTxt.Focus();
+            AdornerLayer layer = AdornerLayer.GetAdornerLayer(FindTxt);
+            layer.Add(new SearchIconAdorner(FindTxt));
+            SetValue(DisplayHelp, true);
         }
 
         private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -68,13 +79,68 @@ namespace BookmarksBase.Search
 
         private void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Return)
+            try
             {
-                DataContext = _bookmarksEngine.DoSearch(_bookmarks, FindTxt.Text);
+                if (e.Key == Key.Return)
+                {
+                    DataContext = _bookmarksEngine.DoSearch(_bookmarks, FindTxt.Text);
+                }
+            }
+            catch (ArgumentException ae)
+            {
+                MessageBox.Show(
+                    "Cannot create regular expression from given pattern. " + ae.Message,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
             }
         }
 
+        private void FindTxt_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if ((bool)GetValue(DisplayHelp) == true)
+            {
+                FindTxt.Text = string.Empty;
+            }
+            SetValue(DisplayHelp, false);
+        }
+    }
 
+    public class SearchIconAdorner : Adorner
+    {
+        private readonly VisualCollection _visualCollection;
+        private readonly Image _image;
+
+        public SearchIconAdorner(UIElement adornedElement) : base(adornedElement)
+        {
+            _visualCollection = new VisualCollection(this);
+            _image = new Image();
+            _image.Source = new BitmapImage(new Uri("pack://application:,,,/BookmarksBase.Search;component/searchicon.png"));
+            _image.Stretch = Stretch.Uniform;
+            _visualCollection.Add(_image);
+        }
+
+        protected override Visual GetVisualChild(int index)
+        {
+            return _visualCollection[index];
+        }
+        protected override int VisualChildrenCount
+        {
+            get { return _visualCollection.Count; }
+        }
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            double controlWidth = AdornedElement.RenderSize.Width;
+            double controlHeight = AdornedElement.RenderSize.Height;
+            double imgSize = controlHeight - 10;
+            _image.Width = imgSize;
+            _image.Height = imgSize;
+            _image.Arrange(new Rect(controlWidth - imgSize * 1.3, imgSize / 4 , imgSize, imgSize));
+            return finalSize;
+        }
 
     }
+
 }
