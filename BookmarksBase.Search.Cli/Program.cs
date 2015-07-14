@@ -30,7 +30,7 @@ namespace BookmarksBase.Search.Cli
             }
 
             var bookmarksEngine = new BookmarksBaseSearchEngine();
-
+            bookmarksEngine.Load();
             var bookmarks = bookmarksEngine.GetBookmarks();
 
             if(operation == Operation.DefaultCli || operation == Operation.SingleRun)

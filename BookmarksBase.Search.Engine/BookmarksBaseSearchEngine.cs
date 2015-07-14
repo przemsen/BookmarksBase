@@ -11,16 +11,29 @@ namespace BookmarksBase.Search.Engine
     public class BookmarksBaseSearchEngine
     {
         private readonly Regex   _deleteWhiteSpaceAtBeginningRegex;
+        private XDocument _doc;
 
         public BookmarksBaseSearchEngine()
         {
             _deleteWhiteSpaceAtBeginningRegex = new Regex(@"^\s+", RegexOptions.Compiled);
+            _doc = null;
         }
 
-        public IEnumerable<XElement> GetBookmarks(string fileName = "bookmarksbase.xml")
+        public void Load(string fileName = "bookmarksbase.xml")
         {
-            XDocument bookmarksBase = XDocument.Load(fileName);
-            var root = bookmarksBase.Descendants("Bookmarks");
+            _doc = XDocument.Load(fileName);
+        }
+
+        public string GetCreationDate()
+        {
+            var root = _doc.Element("Bookmarks");
+            var date = root.Attribute("CreationDate").Value;
+            return date;
+        }
+
+        public IEnumerable<XElement> GetBookmarks()
+        {
+            var root = _doc.Descendants("Bookmarks");
             var bookmarks = root.Elements("Bookmark");
             return bookmarks;
         }

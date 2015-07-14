@@ -107,6 +107,7 @@ namespace BookmarksBase.Importer
             using (var writer = XmlWriter.Create(outputFile, xws))
             {
                 writer.WriteStartElement("Bookmarks");
+                writer.WriteAttributeString("CreationDate", DateTime.Now.ToString());
                 foreach (var bookmark in list)
                 {
                     writer.WriteStartElement("Bookmark");

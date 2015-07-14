@@ -16,6 +16,7 @@ using System.Xml.Linq;
 
 using BookmarksBase.Search.Engine;
 using System.Windows.Controls.Primitives;
+using System.Diagnostics;
 
 namespace BookmarksBase.Search
 {
@@ -43,7 +44,11 @@ namespace BookmarksBase.Search
             _bookmarksEngine = new BookmarksBaseSearchEngine();
             try
             {
+                _bookmarksEngine.Load();
                 _bookmarks = _bookmarksEngine.GetBookmarks();
+                var date = _bookmarksEngine.GetCreationDate();
+                var count = _bookmarks.Count();
+                DisplayStatus(date, count);
             }
             catch
             {
@@ -106,7 +111,24 @@ namespace BookmarksBase.Search
             }
             SetValue(DisplayHelp, false);
         }
+
+        private void DisplayStatus(string creationDate, int count)
+        {
+            System.Reflection.Assembly myself = System.Reflection.Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(myself.Location);
+            var status = string.Format(
+                "Loaded {0} bookmarks, created at {1}. Application version {2}.{3}.{4}",
+                count,
+                creationDate,
+                fvi.FileMajorPart,
+                fvi.FileMinorPart,
+                fvi.FileBuildPart
+            );
+            StatusTxt.Text = status;
+        }
     }
+
+    #region Adorner
 
     public class SearchIconAdorner : Adorner
     {
@@ -142,5 +164,7 @@ namespace BookmarksBase.Search
         }
 
     }
+
+    #endregion
 
 }
