@@ -31,6 +31,10 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
 
+## 1.2.1 &mdash; 2015-07-15 ##
+- Search engine performance improvements
+- Importer now creates zipped copy of previous contents
+
 ## 1.2.0 &mdash; 2015-07-14 ##
 - Importer now saves the date of import and Search is able to display it
 

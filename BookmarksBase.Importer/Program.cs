@@ -8,14 +8,18 @@ using System.IO;
 using System.Diagnostics;
 using System.Data.SQLite;
 using System.Xml;
+using System.IO.Compression;
 
 namespace BookmarksBase.Importer
 {
     class Program
     {
+        public const string DB_FILE_NAME = "bookmarksbase.xml";
+
         static void Main(string[] args)
         {
             SetupTrace();
+            ArchiveExistingFiles();
 
             Trace.WriteLine("Default importer: Fierfox");
 
@@ -64,7 +68,32 @@ namespace BookmarksBase.Importer
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;
         }
-    }
 
+        private static void ArchiveExistingFiles()
+        {
+            try
+            {
+                if (File.Exists(DB_FILE_NAME))
+                {
+                    if (File.Exists(DB_FILE_NAME + ".zip"))
+                    {
+                        File.Delete(DB_FILE_NAME + ".zip");
+                    }
+                    using (var zip = ZipFile.Open(DB_FILE_NAME + ".zip", ZipArchiveMode.Create))
+                    {
+                        zip.CreateEntryFromFile(DB_FILE_NAME, DB_FILE_NAME);
+                        zip.Dispose();
+                        Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
+                    }
+                    File.Delete(DB_FILE_NAME);
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine("Exception while trying to archive proevious database file:");
+                Trace.WriteLine(e.Message);
+            }
+        }
+    }
 
 }

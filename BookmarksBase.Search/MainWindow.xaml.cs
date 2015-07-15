@@ -26,7 +26,7 @@ namespace BookmarksBase.Search
     public partial class MainWindow : Window
     {
         private BookmarksBaseSearchEngine _bookmarksEngine;
-        private IEnumerable<XElement> _bookmarks;
+        private Bookmark[] _bookmarks;
 
         public static readonly DependencyProperty DisplayHelp =
             DependencyProperty.Register(
@@ -46,9 +46,8 @@ namespace BookmarksBase.Search
             {
                 _bookmarksEngine.Load();
                 _bookmarks = _bookmarksEngine.GetBookmarks();
-                var date = _bookmarksEngine.GetCreationDate();
-                var count = _bookmarks.Count();
-                DisplayStatus(date, count);
+                DisplayStatus(_bookmarksEngine.GetCreationDate(), _bookmarks.Length);
+                _bookmarksEngine.Release();
             }
             catch
             {

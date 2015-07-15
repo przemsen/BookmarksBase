@@ -5,13 +5,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Collections.Concurrent;
 
 namespace BookmarksBase.Search.Engine
 {
     public class BookmarksBaseSearchEngine
     {
-        private readonly Regex   _deleteWhiteSpaceAtBeginningRegex;
+        private readonly Regex _deleteWhiteSpaceAtBeginningRegex;
         private XDocument _doc;
+        public const string DB_FILE_NAME = "bookmarksbase.xml";
 
         public BookmarksBaseSearchEngine()
         {
@@ -19,7 +21,7 @@ namespace BookmarksBase.Search.Engine
             _doc = null;
         }
 
-        public void Load(string fileName = "bookmarksbase.xml")
+        public void Load(string fileName = DB_FILE_NAME)
         {
             _doc = XDocument.Load(fileName);
         }
@@ -31,52 +33,59 @@ namespace BookmarksBase.Search.Engine
             return date;
         }
 
-        public IEnumerable<XElement> GetBookmarks()
+        public Bookmark[] GetBookmarks()
         {
             var root = _doc.Descendants("Bookmarks");
-            var bookmarks = root.Elements("Bookmark");
+            var xbookmarks = root.Elements("Bookmark");
+            var count = xbookmarks.Count();
+            var bookmarks = new Bookmark[count];
+            int i = 0;
+            foreach(var b in xbookmarks)
+            {
+                bookmarks[i].Title = b.Element("Title").Value;
+                bookmarks[i].Url = b.Element("Url").Value;
+                bookmarks[i].Content = b.Element("Content").Value;
+                i++;
+            }
             return bookmarks;
         }
 
-        public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<XElement> bookmarks, string pattern)
+        public void Release()
+        {
+            _doc = null;
+            System.GC.Collect();
+        }
+
+        public IEnumerable<BookmarkSearchResult> DoSearch(Bookmark[] bookmarks, string pattern)
         {
             pattern = SanitizePattern(pattern);
             var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-            var result = new List<BookmarkSearchResult>();
-            var lck = new Object();
-
+            var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
             {
-                var match = regex.Match(b.Element("Content").Value);
+                var match = regex.Match(b.Url + b.Title);
                 if (match.Success)
                 {
-                    lock (lck)
+                    result.Add(new BookmarkSearchResult
                     {
-                        result.Add(new BookmarkSearchResult
-                        {
-                            Title = b.Element("Title").Value,
-                            ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(match.Value, string.Empty),
-                            Url = b.Element("Url").Value
-                        });
-                    }
+                        Title = b.Title,
+                        Url = b.Url
+                    });
                 }
                 else
                 {
-                    match = regex.Match(b.Element("Url").Value + b.Element("Title").Value);
+                    match = regex.Match(b.Content);
                     if (match.Success)
                     {
-                        lock (lck)
+                        result.Add(new BookmarkSearchResult
                         {
-                            result.Add(new BookmarkSearchResult
-                            {
-                                Title = b.Element("Title").Value,
-                                Url = b.Element("Url").Value
-                            });
-                        }
+                            Title = b.Title,
+                            ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(match.Value, string.Empty),
+                            Url = b.Url
+                        });
                     }
                 }
             });
-
             return result;
         }
 
@@ -102,14 +111,14 @@ namespace BookmarksBase.Search.Engine
             return pattern;
         }
 
-        public IEnumerable<BookmarkSearchResult> DoDeadSearch(IEnumerable<XElement> bookmarks)
+        public IEnumerable<BookmarkSearchResult> DoDeadSearch(Bookmark[] bookmarks)
         {
             var result = from b in bookmarks
-                         where b.Element("Content").Value == "[Error]"
+                         where b.Content == "[Error]"
                          select new BookmarkSearchResult
                          {
-                            Title = b.Element("Title").Value,
-                            Url = b.Element("Url").Value
+                             Title = b.Title,
+                             Url = b.Url
                          }
                          ;
             return result;
@@ -126,8 +135,13 @@ namespace BookmarksBase.Search.Engine
         public string Url { get; set; }
         public string Title { get; set; }
         public string ContentExcerpt { get; set; }
-        public const int NotFound = -1;
     }
 
+    public struct Bookmark
+    {
+        public string Url;
+        public string Title;
+        public string Content;
+    }
 
 }
