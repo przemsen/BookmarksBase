@@ -141,7 +141,7 @@ namespace BookmarksBase.Importer
 
         public class BookmarksImporterConstants
         {
-            public const string LynxCommandLineOptions = " --nolist --dump -hiddenlinks=ignore -display_charset UTF-8 -cfg=lynx\\lynx.cfg ";
+            public const string LynxCommandLineOptions = " -nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
             public const string LynxCommand = "lynx\\lynx.exe";
             public const int WaitTimeoutForLynxProcess = 1000;
         }

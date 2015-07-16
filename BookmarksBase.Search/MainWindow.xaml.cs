@@ -98,7 +98,6 @@ namespace BookmarksBase.Search
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-
             }
         }
 

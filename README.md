@@ -22,7 +22,7 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 - You can use TAB to switch between search box and results list
 - You can move up and down using keyboard when results list is focused
-- Search is case insentive and a text you enter is compiled as a regular expression
+- Search is case insensitive and a text you enter is compiled as a regular expression
 - If you wish to express any number of any characters use `.*`
 - Double click on results list item opens it in a web browser
 - Enter while focused on results list also opens selected item in a web browser
@@ -30,6 +30,9 @@ The `log.txt` file is also created and contains exactly the same contents as the
 # 2. Changelog #
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
+
+## 1.2.2 &mdash; 2015-07-16 ##
+- Fixed bug when multi word pattern does not match when it spans 2 lines in rendered contents 
 
 ## 1.2.1 &mdash; 2015-07-15 ##
 - Search engine performance improvements
@@ -57,7 +60,7 @@ Current state of source code may be newer than version of application in precomp
 
 - `BookmarksBase.Search` &mdash; WPF application to perform searches. 
 - `BookmarksBase.Search.Cli` &mdash; Command line version of searching application. It is expected to have more functionalities than WPF version.
-- `BookmarksBase.Engine` &mdash; DLL library containing actual implementation of search. It is shared beetwen both `Search` applications.
+- `BookmarksBase.Engine` &mdash; DLL library containing actual implementation of search. It is shared between both `Search` applications.
 - `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages.
 - `BookmarksBase.Tests` &mdash; Unit tests.
 

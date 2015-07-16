@@ -11,13 +11,14 @@ namespace BookmarksBase.Search.Engine
 {
     public class BookmarksBaseSearchEngine
     {
-        private readonly Regex _deleteWhiteSpaceAtBeginningRegex;
+        private readonly Regex _deleteEmptyLinesRegex;
         private XDocument _doc;
         public const string DB_FILE_NAME = "bookmarksbase.xml";
+        public const int DEFAULT_CONTEXT_LENGTH = 80;
 
         public BookmarksBaseSearchEngine()
         {
-            _deleteWhiteSpaceAtBeginningRegex = new Regex(@"^\s+", RegexOptions.Compiled);
+            _deleteEmptyLinesRegex = new Regex(@"^\s*$[\r\n]*", RegexOptions.Compiled | RegexOptions.Multiline);
             _doc = null;
         }
 
@@ -59,7 +60,10 @@ namespace BookmarksBase.Search.Engine
         public IEnumerable<BookmarkSearchResult> DoSearch(Bookmark[] bookmarks, string pattern)
         {
             pattern = SanitizePattern(pattern);
-            var regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            var regex = new Regex(
+                pattern,
+                RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline
+            );
             var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
             {
@@ -80,7 +84,7 @@ namespace BookmarksBase.Search.Engine
                         result.Add(new BookmarkSearchResult
                         {
                             Title = b.Title,
-                            ContentExcerpt = _deleteWhiteSpaceAtBeginningRegex.Replace(match.Value, string.Empty),
+                            ContentExcerpt = _deleteEmptyLinesRegex.Replace(match.Value, string.Empty),
                             Url = b.Url
                         });
                     }
@@ -91,23 +95,12 @@ namespace BookmarksBase.Search.Engine
 
         private static string SanitizePattern(string pattern)
         {
-            if (pattern.IndexOf("++") != -1)
-            {
-                pattern = pattern.Replace("++", @"\+\+");
-            }
-            else if (pattern.IndexOf("**") != -1)
-            {
-                pattern = pattern.Replace("**", @"\*\*");
-            }
-            else if (pattern.IndexOf("$$") != -1)
-            {
-                pattern = pattern.Replace("$$", @"\$\$");
-            }
-            else if (pattern.IndexOf("##") != -1)
-            {
-                pattern = pattern.Replace("##", @"\#\#");
-            }
-            pattern = string.Format("^.*{0}.*$", pattern);
+            pattern = pattern.Replace("++", @"\+\+");
+            pattern = pattern.Replace("**", @"\*\*");
+            pattern = pattern.Replace("$$", @"\$\$");
+            pattern = pattern.Replace("##", @"\#\#");
+            pattern = pattern.Replace(" ", @"\s+");
+            pattern = string.Format(".{{{0}}}{1}.{{{2}}}", DEFAULT_CONTEXT_LENGTH, pattern, DEFAULT_CONTEXT_LENGTH);
             return pattern;
         }
 
