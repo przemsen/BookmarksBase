@@ -20,23 +20,26 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 **[Download link](http://1drv.ms/1LWwROU)**
 
-- You can use TAB to switch between search box and results list
-- You can move up and down using keyboard when results list is focused
-- Search is case insensitive and a text you enter is compiled as a regular expression
-- If you wish to express any number of any characters use `.*`
-- Double click on results list item opens it in a web browser
-- Enter while focused on results list also opens selected item in a web browser
+- You can use TAB to switch between search box and results list.
+- You can move up and down using keyboard when results list is focused.
+- Search is case insensitive and a text you enter is compiled as a regular expression.
+- If you wish to express any number of any characters use `.*`.
+- Double click on results list item opens it in a web browser.
+- Enter while focused on results list also opens selected item in a web browser.
 
 # 2. Changelog #
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
 
+## 1.2.3 &mdash; 2015-07-17 ##
+- Fixed performance overhead bug inadvertently introduced in 1.2.2
+
 ## 1.2.2 &mdash; 2015-07-16 ##
-- Fixed bug when multi word pattern does not match when it spans 2 lines in rendered contents 
+- Fixed bug when multi word pattern does not match when it spans 2 lines in rendered contents
 
 ## 1.2.1 &mdash; 2015-07-15 ##
-- Search engine performance improvements
-- Importer now creates zipped copy of previous contents
+- Search engine performance improvements.
+- Importer now creates zipped copy of previous contents.
 
 ## 1.2.0 &mdash; 2015-07-14 ##
 - Importer now saves the date of import and Search is able to display it
@@ -68,4 +71,4 @@ Current state of source code may be newer than version of application in precomp
 
 - All applications require .NET Framework version 4.5.2.
 - Currently only Firefox web browser is supported. Other implementations can easily be created by inheriting `BookmarksImporter` class (following open-closed principle). 
-- HTML parsing is conducted by [Lynx](http://lynx.isc.org/ "Lynx") and thus its binaries are required to run the importer.
+- HTML parsing is conducted by [Lynx](http://lynx.isc.org) and thus its binaries are required to run the importer.

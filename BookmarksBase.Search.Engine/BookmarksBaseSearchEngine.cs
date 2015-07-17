@@ -70,23 +70,30 @@ namespace BookmarksBase.Search.Engine
                 var match = regex.Match(b.Url + b.Title);
                 if (match.Success)
                 {
-                    result.Add(new BookmarkSearchResult
-                    {
-                        Title = b.Title,
-                        Url = b.Url
-                    });
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null));
                 }
                 else
                 {
                     match = regex.Match(b.Content);
                     if (match.Success)
                     {
-                        result.Add(new BookmarkSearchResult
+                        var item = new BookmarkSearchResult(b.Url, b.Title, null);
+
+                        int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
+                        if (excerptStart < 0)
                         {
-                            Title = b.Title,
-                            ContentExcerpt = _deleteEmptyLinesRegex.Replace(match.Value, string.Empty),
-                            Url = b.Url
-                        });
+                            excerptStart = 0;
+                        }
+
+                        int excerptEnd = match.Index + DEFAULT_CONTEXT_LENGTH;
+                        if (excerptEnd > b.Content.Length -1)
+                        {
+                            excerptEnd = b.Content.Length - 1;
+                        }
+
+                        item.ContentExcerpt = b.Content.Substring(excerptStart, excerptEnd - excerptStart);
+                        item.ContentExcerpt = _deleteEmptyLinesRegex.Replace(item.ContentExcerpt, string.Empty);
+                        result.Add(item);
                     }
                 }
             });
@@ -100,7 +107,6 @@ namespace BookmarksBase.Search.Engine
             pattern = pattern.Replace("$$", @"\$\$");
             pattern = pattern.Replace("##", @"\#\#");
             pattern = pattern.Replace(" ", @"\s+");
-            pattern = string.Format(".{{{0}}}{1}.{{{2}}}", DEFAULT_CONTEXT_LENGTH, pattern, DEFAULT_CONTEXT_LENGTH);
             return pattern;
         }
 
@@ -108,11 +114,7 @@ namespace BookmarksBase.Search.Engine
         {
             var result = from b in bookmarks
                          where b.Content == "[Error]"
-                         select new BookmarkSearchResult
-                         {
-                             Title = b.Title,
-                             Url = b.Url
-                         }
+                         select new BookmarkSearchResult(b.Url, b.Title, null)
                          ;
             return result;
         }
@@ -125,6 +127,12 @@ namespace BookmarksBase.Search.Engine
 
     public class BookmarkSearchResult
     {
+        public BookmarkSearchResult(string url, string title, string contentExcetpt)
+        {
+            Url = url;
+            Title = title;
+            ContentExcerpt = contentExcetpt;
+        }
         public string Url { get; set; }
         public string Title { get; set; }
         public string ContentExcerpt { get; set; }
