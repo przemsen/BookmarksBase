@@ -11,6 +11,7 @@ namespace BookmarksBase.Importer
     public class BookmarksBaseWebClient : WebClient
     {
         private readonly BookmarksImporter.Options _options;
+        private readonly CookieContainer _cookies = new CookieContainer();
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
@@ -20,19 +21,19 @@ namespace BookmarksBase.Importer
         protected override WebRequest GetWebRequest(Uri address)
         {
             var request = base.GetWebRequest(address) as HttpWebRequest;
-
+            request.MaximumAutomaticRedirections = 100;
+            request.Timeout = 10000;
+            request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0";
+            request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+            request.Headers["Accept-Language"] = "pl,en-US;q=0.7,en;q=0.3";
+            request.Headers["Accept-Encoding"] = "gzip, deflate";
+            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             // It turns out, when these properties are set and system wide SOCKS proxy is configured,
             // the connection bypasses the proxy. We need an option to prevent this.
             if (!_options.SockProxyFriendly)
             {
-                // Try to mimic web browser as much as we can.
-                // TODO: maybe more sophisticated crafting of HTTP headers
-                request.MaximumAutomaticRedirections = 100;
-                request.CookieContainer = new CookieContainer();
-                request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0";
-                request.Timeout = 5000;
+                request.CookieContainer = _cookies;
             }
-
             return request;
         }
     }

@@ -85,12 +85,11 @@ namespace BookmarksBase.Importer
                         zip.Dispose();
                         Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
                     }
-                    File.Delete(DB_FILE_NAME);
                 }
             }
             catch (Exception e)
             {
-                Trace.WriteLine("Exception while trying to archive proevious database file:");
+                Trace.WriteLine("Exception while trying to archive previous database file:");
                 Trace.WriteLine(e.Message);
             }
         }

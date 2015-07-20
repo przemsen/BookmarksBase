@@ -92,6 +92,7 @@ namespace BookmarksBase.Importer
             if (_errLog.Any())
             {
                 _errLog.ForEach(e => { Trace.WriteLine(e); });
+                Trace.WriteLine(_errLog.Count + " errors. ");
                 _errLog.Clear();
             }
         }

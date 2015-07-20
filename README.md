@@ -31,6 +31,9 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
 
+## 1.2.4 &mdash; 2015-07-20 ##
+- Importer more precisely mimics Firefox web browser
+
 ## 1.2.3 &mdash; 2015-07-17 ##
 - Fixed performance overhead bug inadvertently introduced in 1.2.2
 

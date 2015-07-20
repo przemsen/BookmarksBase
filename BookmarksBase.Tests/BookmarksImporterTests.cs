@@ -12,9 +12,9 @@ namespace BookmarksImporter.Tests
         public void LynxWorks()
         {
             FirefoxBookmarksImporter fbi = new FirefoxBookmarksImporter(
-                new BookmarksImporter.Options()
+                new BookmarksImporter.Options() { SockProxyFriendly = true  }
             );
-            var result = fbi.Lynx("http://regex.info/exif.cgi");
+            var result = fbi.Lynx("http://localhost:5000");
         }
     }
 }
