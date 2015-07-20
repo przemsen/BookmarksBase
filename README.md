@@ -1,5 +1,7 @@
 #### BookmarksBase is a tool that allows you to search within your bookmarks including entire contents of web sites, addresses and titles. ####
 
+![Screenshot](https://cloud.githubusercontent.com/assets/6310503/8783838/abc8b3a8-2f1e-11e5-9f50-3ce8f4ec5f0a.png)
+
 ----------
 
 # 1. Instructions for the user #
