@@ -21,8 +21,10 @@ namespace BookmarksBase.Importer
         protected override WebRequest GetWebRequest(Uri address)
         {
             var request = base.GetWebRequest(address) as HttpWebRequest;
+            request.ServicePoint.ConnectionLimit = 128;
             request.MaximumAutomaticRedirections = 100;
-            request.Timeout = 10000;
+            request.Timeout = 20000;
+            request.KeepAlive = false;
             request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0";
             request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
             request.Headers["Accept-Language"] = "pl,en-US;q=0.7,en;q=0.3";

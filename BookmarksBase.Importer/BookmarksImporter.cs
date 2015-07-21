@@ -84,11 +84,16 @@ namespace BookmarksBase.Importer
 
         public void LoadContents(IList<Bookmark> list)
         {
-            foreach (var b in list)
-            {
-                b.Contents = Task.Factory.StartNew<string>(() => Lynx(b.Url));
-            }
-            Task.WaitAll(list.Select(b => b.Contents).ToArray());
+            Parallel.ForEach(
+              list,
+              new ParallelOptions { MaxDegreeOfParallelism = 4 },
+              b => b.Contents = Lynx(b.Url)
+            );
+            //foreach (var b in list)
+            //{
+            //    b.Contents = Task.Factory.StartNew<string>(() => Lynx(b.Url));
+            //}
+            //Task.WaitAll(list.Select(b => b.Contents).ToArray());
             if (_errLog.Any())
             {
                 _errLog.ForEach(e => { Trace.WriteLine(e); });
@@ -121,7 +126,7 @@ namespace BookmarksBase.Importer
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("Content");
-                    writer.WriteString(bookmark.Contents.Result);
+                    writer.WriteString(bookmark.Contents);
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                 }
@@ -151,7 +156,7 @@ namespace BookmarksBase.Importer
         {
             public string Url { get; set; }
             public string Title { get; set; }
-            public Task<string> Contents { get; set; }
+            public string Contents { get; set; }
         }
 
         public class Options
