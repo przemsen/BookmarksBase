@@ -17,7 +17,7 @@
 Function ProcessAssemblyInfo($path)
 {
     $content = Get-Content $path
-    $path | Out-String
+    $path | Out-Host
     
     Copy-Item $path ($path + ".bak")
     Remove-Item $path
@@ -27,7 +27,7 @@ Function ProcessAssemblyInfo($path)
         if ( (($line -match 'AssemblyVersion') -or ($line -match 'AssemblyFileVersion')) -and !($line -match '^\/\/') )
         {
             $line = IncrementBuild($line)
-            $line | Out-String
+            $line | Out-Host
         }
         $line | Out-File $path -Append -Encoding "UTF8"       
     }    

@@ -66,9 +66,13 @@ namespace BookmarksBase.Search
 
         private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
-            if (currentBookmark == null) return;
-            System.Diagnostics.Process.Start(currentBookmark.Url);
+            if (e.OriginalSource is TextBlock)
+            {
+                var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
+                if (currentBookmark == null) return;
+                System.Diagnostics.Process.Start(currentBookmark.Url);
+            }
+
         }
 
         private void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
