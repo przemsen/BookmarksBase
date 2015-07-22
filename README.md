@@ -20,7 +20,7 @@ The `log.txt` file is also created and contains exactly the same contents as the
 - `x64` and `x86` folders &mdash; Folders with runtime libraries required by the importer.
 - `System.Data.SQLite.dll` &mdash; Runtime library required by the importer.
 
-**[Download link](https://github.com/przemsen/BookmarksBase/releases/download/1.2.5/BookmarksBase.zip)**
+**[Download link](https://github.com/przemsen/BookmarksBase/releases/download/1.2.6/BookmarksBase.zip)**
 
 - You can use TAB to switch between search box and results list.
 - You can move up and down using keyboard when results list is focused.
@@ -33,40 +33,40 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
 
-## 1.2.6 &mdash; 2015-07-21 ##
+### 1.2.6 &mdash; 2015-07-21 ###
 - Adjustments in concurrent downloads. Previously it created to many connections.
 
-## 1.2.5 &mdash; 2015-07-21 ##
+### 1.2.5 &mdash; 2015-07-21 ###
 - Fixed double clicking on scroll bar bug
 
-## 1.2.4 &mdash; 2015-07-20 ##
+### 1.2.4 &mdash; 2015-07-20 ###
 - Importer more precisely mimics Firefox web browser
 
-## 1.2.3 &mdash; 2015-07-17 ##
+### 1.2.3 &mdash; 2015-07-17 ###
 - Fixed performance overhead bug inadvertently introduced in 1.2.2
 
-## 1.2.2 &mdash; 2015-07-16 ##
+### 1.2.2 &mdash; 2015-07-16 ###
 - Fixed bug when multi word pattern does not match when it spans 2 lines in rendered contents
 
-## 1.2.1 &mdash; 2015-07-15 ##
+### 1.2.1 &mdash; 2015-07-15 ###
 - Search engine performance improvements.
 - Importer now creates zipped copy of previous contents.
 
-## 1.2.0 &mdash; 2015-07-14 ##
+### 1.2.0 &mdash; 2015-07-14 ###
 - Importer now saves the date of import and Search is able to display it
 
-## 1.1.1 &mdash; 2015-07-13 ##
+### 1.1.1 &mdash; 2015-07-13 ###
 - Proper error handling on regex error
 - Minor UI improvements
 
-## 1.1.0 &mdash; 2015-07-11 ##
+### 1.1.0 &mdash; 2015-07-11 ###
 - Improved concurrency while downloading sites
 - Regex support
 - Small improvements in BookmarksBase.Search interface
 - Logging importer output written to file
 - Erroneous urls are now printed at the end of the log 
 
-## 1.0.0 &mdash; 2015-05-16 ##
+### 1.0.0 &mdash; 2015-05-16 ###
 
 - First working version is published.
 
