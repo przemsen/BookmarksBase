@@ -1,5 +1,4 @@
-﻿using System;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace BookmarksImporter.Tests
 {
@@ -11,7 +10,7 @@ namespace BookmarksImporter.Tests
         [Test]
         public void LynxWorks()
         {
-            FirefoxBookmarksImporter fbi = new FirefoxBookmarksImporter(
+            var fbi = new FirefoxBookmarksImporter(
                 new BookmarksImporter.Options() { SockProxyFriendly = true  }
             );
             var result = fbi.Lynx("http://localhost:5000");

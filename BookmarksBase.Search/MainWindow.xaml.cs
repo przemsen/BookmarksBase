@@ -1,21 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Xml.Linq;
-
 using BookmarksBase.Search.Engine;
-using System.Windows.Controls.Primitives;
 using System.Diagnostics;
 
 namespace BookmarksBase.Search
@@ -25,8 +16,8 @@ namespace BookmarksBase.Search
     /// </summary>
     public partial class MainWindow : Window
     {
-        private BookmarksBaseSearchEngine _bookmarksEngine;
-        private Bookmark[] _bookmarks;
+        BookmarksBaseSearchEngine _bookmarksEngine;
+        Bookmark[] _bookmarks;
 
         public static readonly DependencyProperty DisplayHelp =
             DependencyProperty.Register(
@@ -49,7 +40,7 @@ namespace BookmarksBase.Search
                 DisplayStatus(_bookmarksEngine.GetCreationDate(), _bookmarks.Length);
                 _bookmarksEngine.Release();
             }
-            catch
+            catch (Exception)
             {
                 MessageBox.Show(
                     "An error occured while loading bookmarksbase.xml file. Did you run BookmarksBase.Importer?",
@@ -64,7 +55,7 @@ namespace BookmarksBase.Search
             SetValue(DisplayHelp, true);
         }
 
-        private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.OriginalSource is TextBlock)
             {
@@ -75,7 +66,7 @@ namespace BookmarksBase.Search
 
         }
 
-        private void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
+        void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
@@ -85,7 +76,7 @@ namespace BookmarksBase.Search
             }
         }
 
-        private void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
+        void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             try
             {
@@ -105,7 +96,7 @@ namespace BookmarksBase.Search
             }
         }
 
-        private void FindTxt_GotFocus(object sender, RoutedEventArgs e)
+        void FindTxt_GotFocus(object sender, RoutedEventArgs e)
         {
             if ((bool)GetValue(DisplayHelp) == true)
             {
@@ -114,7 +105,7 @@ namespace BookmarksBase.Search
             SetValue(DisplayHelp, false);
         }
 
-        private void DisplayStatus(string creationDate, int count)
+        void DisplayStatus(string creationDate, int count)
         {
             System.Reflection.Assembly myself = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(myself.Location);
@@ -134,8 +125,8 @@ namespace BookmarksBase.Search
 
     public class SearchIconAdorner : Adorner
     {
-        private readonly VisualCollection _visualCollection;
-        private readonly Image _image;
+        readonly VisualCollection _visualCollection;
+        readonly Image _image;
 
         public SearchIconAdorner(UIElement adornedElement) : base(adornedElement)
         {

@@ -33,6 +33,9 @@ The `log.txt` file is also created and contains exactly the same contents as the
 
 Current state of source code may be newer than version of application in precompiled package. I update package when significant changes are introduced.
 
+## 1.2.6 &mdash; 2015-07-21 ##
+- Adjustments in concurrent downloads. Previously it created to many connections.
+
 ## 1.2.5 &mdash; 2015-07-21 ##
 - Fixed double clicking on scroll bar bug
 

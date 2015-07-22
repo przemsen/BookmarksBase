@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
-using System.Data.SQLite;
-using System.Xml;
 using System.IO.Compression;
 
 namespace BookmarksBase.Importer
@@ -18,12 +13,12 @@ namespace BookmarksBase.Importer
 
         static void Main(string[] args)
         {
-            SetupTrace();
+            Setup();
             ArchiveExistingFiles();
 
             Trace.WriteLine("Default importer: Fierfox");
 
-            BookmarksImporter.Options opts = new BookmarksImporter.Options();
+            var opts = new BookmarksImporter.Options();
             if (args.Any())
             {
                 if (args[0] == "--socksproxyfriendly")
@@ -60,16 +55,17 @@ namespace BookmarksBase.Importer
             Console.ReadKey();
         }
 
-        private static void SetupTrace()
+        static void Setup()
         {
-            TextWriterTraceListener tr1 = new TextWriterTraceListener(System.Console.Out);
-            TextWriterTraceListener tr2 = new TextWriterTraceListener(System.IO.File.CreateText("log.txt"));
+            var tr1 = new TextWriterTraceListener(Console.Out);
+            var tr2 = new TextWriterTraceListener(File.CreateText("log.txt"));
             Trace.Listeners.Add(tr1);
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;
+            ServicePointManager.DefaultConnectionLimit = 128;
         }
 
-        private static void ArchiveExistingFiles()
+        static void ArchiveExistingFiles()
         {
             try
             {

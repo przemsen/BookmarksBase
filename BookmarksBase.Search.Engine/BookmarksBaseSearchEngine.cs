@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -11,8 +9,8 @@ namespace BookmarksBase.Search.Engine
 {
     public class BookmarksBaseSearchEngine
     {
-        private readonly Regex _deleteEmptyLinesRegex;
-        private XDocument _doc;
+        readonly Regex _deleteEmptyLinesRegex;
+        XDocument _doc;
         public const string DB_FILE_NAME = "bookmarksbase.xml";
         public const int DEFAULT_CONTEXT_LENGTH = 80;
 
@@ -100,7 +98,7 @@ namespace BookmarksBase.Search.Engine
             return result;
         }
 
-        private static string SanitizePattern(string pattern)
+        static string SanitizePattern(string pattern)
         {
             pattern = pattern.Replace("++", @"\+\+");
             pattern = pattern.Replace("**", @"\*\*");

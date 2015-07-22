@@ -4,8 +4,6 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BookmarksBase.Importer
 {
@@ -26,7 +24,7 @@ namespace BookmarksBase.Importer
             }
             Trace.WriteLine("Firefox bookmarks file found: " + dbFile);
             string cs = @"Data Source=" + dbFile + ";Version=3;";
-            List<Bookmark> list = new List<Bookmark>();
+            var list = new List<Bookmark>();
             using (SQLiteConnection con = new SQLiteConnection(cs))
             using (SQLiteCommand cmd = new SQLiteCommand(FirefoxBookmarksImporterConstants.SQLForGetBookmarksWithUrl, con))
             {
@@ -48,7 +46,7 @@ namespace BookmarksBase.Importer
             return list;
         }
 
-        private string GetFirefoxBookmarksFile()
+        string GetFirefoxBookmarksFile()
         {
             string apppath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string mozilla = System.IO.Path.Combine(apppath, "Mozilla");
@@ -62,7 +60,7 @@ namespace BookmarksBase.Importer
                     bool file_exist = System.IO.File.Exists(prof_file);
                     if (file_exist)
                     {
-                        StreamReader rdr = new StreamReader(prof_file);
+                        var rdr = new StreamReader(prof_file);
                         string resp = rdr.ReadToEnd();
                         string[] lines = resp.Split(new string[] { "\r\n" }, StringSplitOptions.None);
                         string location = lines.First(x => x.Contains("Path=")).Split(new string[] { "=" }, StringSplitOptions.None)[1];

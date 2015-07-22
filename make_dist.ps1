@@ -13,5 +13,15 @@ Copy-Item .\BookmarksBase.Importer\bin\Release\x86 -Destination .\dist\Bookmarks
 
 "Deployed on: $(Get-Date -format "dd-MM-yyyy HH:mm")" | Out-File .\dist\BookmarksBase\timestamp.txt
 
+Add-Type -assembly "system.io.compression.filesystem"
+[io.compression.zipfile]::CreateFromDirectory(
+    [io.path]::combine((Get-Location), "dist", "BookmarksBase"), 
+    [io.path]::combine((Get-Location), "dist", "BookmarksBase.zip"), 
+    [System.IO.Compression.CompressionLevel]::Optimal, 
+    $true
+)
+
+
+
 
 

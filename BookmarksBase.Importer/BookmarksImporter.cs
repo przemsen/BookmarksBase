@@ -12,13 +12,12 @@ namespace BookmarksBase.Importer
 {
     public abstract class BookmarksImporter
     {
-        private readonly Options _options;
-        private readonly object _lck;
-        private readonly List<string> _errLog;
+        readonly Options _options;
+        readonly object _lck;
+        readonly List<string> _errLog;
 
         public abstract IList<Bookmark> GetBookmarks();
-
-        public BookmarksImporter(Options options)
+        protected BookmarksImporter(Options options)
         {
             if (!VerifyLynxDependencies())
             {
@@ -31,8 +30,8 @@ namespace BookmarksBase.Importer
 
         public string Lynx(string url)
         {
-            String result = String.Empty;
-            Byte[] rawData = null;
+            string result = String.Empty;
+            byte[] rawData = null;
             try
             {
                 using (var webClient = new BookmarksBaseWebClient(_options))
@@ -85,15 +84,9 @@ namespace BookmarksBase.Importer
         public void LoadContents(IList<Bookmark> list)
         {
             Parallel.ForEach(
-              list,
-              new ParallelOptions { MaxDegreeOfParallelism = 4 },
-              b => b.Contents = Lynx(b.Url)
+                list,
+                b => b.Contents = Lynx(b.Url)
             );
-            //foreach (var b in list)
-            //{
-            //    b.Contents = Task.Factory.StartNew<string>(() => Lynx(b.Url));
-            //}
-            //Task.WaitAll(list.Select(b => b.Contents).ToArray());
             if (_errLog.Any())
             {
                 _errLog.ForEach(e => { Trace.WriteLine(e); });
@@ -104,7 +97,7 @@ namespace BookmarksBase.Importer
 
         public void SaveBookmarksBase(IList<Bookmark> list, string outputFile = "bookmarksbase.xml")
         {
-            XmlWriterSettings xws = new XmlWriterSettings()
+            var xws = new XmlWriterSettings()
             {
                 Encoding = Encoding.UTF8,
                 Indent = true
@@ -135,7 +128,7 @@ namespace BookmarksBase.Importer
             Trace.WriteLine(outputFile + " saved");
         }
 
-        private bool VerifyLynxDependencies()
+        bool VerifyLynxDependencies()
         {
             return
                 Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx")) &&

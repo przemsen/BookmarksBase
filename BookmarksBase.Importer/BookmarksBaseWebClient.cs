@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using BookmarksBase.Importer;
 
 namespace BookmarksBase.Importer
 {
     public class BookmarksBaseWebClient : WebClient
     {
-        private readonly BookmarksImporter.Options _options;
-        private readonly CookieContainer _cookies = new CookieContainer();
+        readonly BookmarksImporter.Options _options;
+        readonly CookieContainer _cookies = new CookieContainer();
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
@@ -21,9 +16,8 @@ namespace BookmarksBase.Importer
         protected override WebRequest GetWebRequest(Uri address)
         {
             var request = base.GetWebRequest(address) as HttpWebRequest;
-            request.ServicePoint.ConnectionLimit = 128;
             request.MaximumAutomaticRedirections = 100;
-            request.Timeout = 20000;
+            request.Timeout = 30000;
             request.KeepAlive = false;
             request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0";
             request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
