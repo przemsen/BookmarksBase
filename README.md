@@ -20,7 +20,7 @@ The `log.txt` file is also created and contains exactly the same contents as the
 - `x64` and `x86` folders &mdash; Folders with runtime libraries required by the importer.
 - `System.Data.SQLite.dll` &mdash; Runtime library required by the importer.
 
-**[Download link](https://github.com/przemsen/BookmarksBase/releases/download/1.2.6/BookmarksBase.zip)**
+**[Download link](https://github.com/przemsen/BookmarksBase/releases/download/V.1.2.6/BookmarksBase.zip)**
 
 - You can use TAB to switch between search box and results list.
 - You can move up and down using keyboard when results list is focused.
