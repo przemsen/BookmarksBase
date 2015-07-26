@@ -49,15 +49,15 @@ namespace BookmarksBase.Importer
         string GetFirefoxBookmarksFile()
         {
             string apppath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string mozilla = System.IO.Path.Combine(apppath, "Mozilla");
-            bool exist = System.IO.Directory.Exists(mozilla);
+            string mozilla = Path.Combine(apppath, "Mozilla");
+            bool exist = Directory.Exists(mozilla);
             if (exist)
             {
-                string firefox = System.IO.Path.Combine(mozilla, "firefox");
-                if (System.IO.Directory.Exists(firefox))
+                string firefox = Path.Combine(mozilla, "firefox");
+                if (Directory.Exists(firefox))
                 {
-                    string prof_file = System.IO.Path.Combine(firefox, "profiles.ini");
-                    bool file_exist = System.IO.File.Exists(prof_file);
+                    string prof_file = Path.Combine(firefox, "profiles.ini");
+                    bool file_exist = File.Exists(prof_file);
                     if (file_exist)
                     {
                         var rdr = new StreamReader(prof_file);
@@ -65,14 +65,15 @@ namespace BookmarksBase.Importer
                         string[] lines = resp.Split(new string[] { "\r\n" }, StringSplitOptions.None);
                         string location = lines.First(x => x.Contains("Path=")).Split(new string[] { "=" }, StringSplitOptions.None)[1];
                         location = location.Replace('/', '\\');
-                        string prof_dir = System.IO.Path.Combine(firefox, location);
-                        return System.IO.Path.Combine(prof_dir, "places.sqlite");
+                        string prof_dir = Path.Combine(firefox, location);
+                        return Path.Combine(prof_dir, "places.sqlite");
                     }
                 }
             }
             return string.Empty;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0014:If all fields, properties and methods members are static, the class can be made static.", Justification = "<Pending>")]
         public class FirefoxBookmarksImporterConstants : BookmarksImporterConstants
         {
             public const string SQLForGetBookmarksWithUrl = @"

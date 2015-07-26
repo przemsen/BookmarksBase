@@ -16,6 +16,7 @@ namespace BookmarksBase.Importer
         protected override WebRequest GetWebRequest(Uri address)
         {
             var request = base.GetWebRequest(address) as HttpWebRequest;
+            request.ProtocolVersion = HttpVersion.Version11;
             request.MaximumAutomaticRedirections = 100;
             request.Timeout = 30000;
             request.KeepAlive = false;

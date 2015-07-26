@@ -137,14 +137,8 @@ namespace BookmarksBase.Search
             _visualCollection.Add(_image);
         }
 
-        protected override Visual GetVisualChild(int index)
-        {
-            return _visualCollection[index];
-        }
-        protected override int VisualChildrenCount
-        {
-            get { return _visualCollection.Count; }
-        }
+        protected override Visual GetVisualChild(int index) => _visualCollection[index];
+        protected override int VisualChildrenCount => _visualCollection.Count;
         protected override Size ArrangeOverride(Size finalSize)
         {
             double controlWidth = AdornedElement.RenderSize.Width;

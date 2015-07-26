@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -81,11 +82,18 @@ namespace BookmarksBase.Importer
             return result;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0002:Convert anonymous method to method group", Justification = "<Pending>")]
         public void LoadContents(IList<Bookmark> list)
         {
+            //foreach (var b in list)
+            //{
+            //    b.Contents = Lynx(b.Url);
+            //    Thread.Sleep(500);
+            //}
             Parallel.ForEach(
                 list,
-                b => b.Contents = Lynx(b.Url)
+                //new ParallelOptions { MaxDegreeOfParallelism = 8 },
+                b => { b.Contents = Lynx(b.Url); }
             );
             if (_errLog.Any())
             {
@@ -128,16 +136,14 @@ namespace BookmarksBase.Importer
             Trace.WriteLine(outputFile + " saved");
         }
 
-        bool VerifyLynxDependencies()
-        {
-            return
-                Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx")) &&
-                File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.exe")) &&
-                File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.cfg")) &&
-                File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "libbz2.dll"))
-                ;
-        }
+        bool VerifyLynxDependencies() =>
+            Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx")) &&
+            File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.exe")) &&
+            File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.cfg")) &&
+            File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "libbz2.dll"))
+            ;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0014:If all fields, properties and methods members are static, the class can be made static.", Justification = "<Pending>")]
         public class BookmarksImporterConstants
         {
             public const string LynxCommandLineOptions = " -nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
