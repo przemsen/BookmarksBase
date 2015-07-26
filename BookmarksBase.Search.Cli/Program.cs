@@ -36,7 +36,7 @@ namespace BookmarksBase.Search.Cli
                         Console.Write("? ");
 
                         find = Console.ReadLine();
-                        if (find == ":q") System.Environment.Exit(0);
+                        if (find == ":q") Environment.Exit(0);
                         Console.Clear();
                     }
                 };
@@ -52,7 +52,7 @@ namespace BookmarksBase.Search.Cli
                         Console.WriteLine("    " + r.ContentExcerpt);
                         Console.WriteLine();
                     }
-                    if (operation == Operation.SingleRun) System.Environment.Exit(0);
+                    if (operation == Operation.SingleRun) Environment.Exit(0);
                 }
             }
             else if (operation == Operation.FindDeadBookmarks)

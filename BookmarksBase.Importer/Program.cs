@@ -28,7 +28,7 @@ namespace BookmarksBase.Importer
                 else
                 {
                     Trace.WriteLine("Unrecognized option: " + args[0]);
-                    System.Environment.Exit(1);
+                    Environment.Exit(1);
                 }
             }
 
@@ -40,7 +40,7 @@ namespace BookmarksBase.Importer
             catch (FileNotFoundException e)
             {
                 Trace.WriteLine(e.Message);
-                System.Environment.Exit(1);
+                Environment.Exit(1);
             }
 
             var bookmarks = fbi.GetBookmarks();
