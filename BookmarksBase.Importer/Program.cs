@@ -78,7 +78,6 @@ namespace BookmarksBase.Importer
                     using (var zip = ZipFile.Open(DB_FILE_NAME + ".zip", ZipArchiveMode.Create))
                     {
                         zip.CreateEntryFromFile(DB_FILE_NAME, DB_FILE_NAME);
-                        zip.Dispose();
                         Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
                     }
                 }
