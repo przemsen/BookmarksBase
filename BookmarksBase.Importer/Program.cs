@@ -48,6 +48,9 @@ namespace BookmarksBase.Importer
             {
                 return;
             }
+
+            //bookmarks = bookmarks.Skip(15).Take(1);         
+
             fbi.LoadContents(bookmarks);
             fbi.SaveBookmarksBase(bookmarks);
 
@@ -58,7 +61,7 @@ namespace BookmarksBase.Importer
         static void Setup()
         {
             var tr1 = new TextWriterTraceListener(Console.Out);
-            var tr2 = new TextWriterTraceListener(File.CreateText("log.txt"));
+            var tr2 = new TextWriterTraceListener(File.CreateText("log.htm"));
             Trace.Listeners.Add(tr1);
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;
@@ -78,6 +81,11 @@ namespace BookmarksBase.Importer
                     using (var zip = ZipFile.Open(DB_FILE_NAME + ".zip", ZipArchiveMode.Create))
                     {
                         zip.CreateEntryFromFile(DB_FILE_NAME, DB_FILE_NAME);
+                        foreach (var f in Directory.GetFiles("data"))
+                        {
+                            zip.CreateEntryFromFile(f, f.Replace("\\", "/"));
+                        }
+                        
                         Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
                     }
                 }

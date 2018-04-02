@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Collections.Concurrent;
+using System.IO;
 
 namespace BookmarksBase.Search.Engine
 {
@@ -43,7 +44,7 @@ namespace BookmarksBase.Search.Engine
             {
                 bookmarks[i].Title = b.Element("Title").Value;
                 bookmarks[i].Url = b.Element("Url").Value;
-                bookmarks[i].Content = b.Element("Content").Value;
+                bookmarks[i].ContentsFileName =  b.Element("ContentsFileName").Value;
                 i++;
             }
             return bookmarks;
@@ -72,7 +73,8 @@ namespace BookmarksBase.Search.Engine
                 }
                 else
                 {
-                    match = regex.Match(b.Content);
+                    var content = File.ReadAllText(b.ContentsFileName);
+                    match = regex.Match(content);
                     if (match.Success)
                     {
                         var item = new BookmarkSearchResult(b.Url, b.Title, null);
@@ -84,12 +86,12 @@ namespace BookmarksBase.Search.Engine
                         }
 
                         int excerptEnd = match.Index + DEFAULT_CONTEXT_LENGTH;
-                        if (excerptEnd > b.Content.Length -1)
+                        if (excerptEnd > content.Length -1)
                         {
-                            excerptEnd = b.Content.Length - 1;
+                            excerptEnd = content.Length - 1;
                         }
 
-                        item.ContentExcerpt = b.Content.Substring(excerptStart, excerptEnd - excerptStart);
+                        item.ContentExcerpt = content.Substring(excerptStart, excerptEnd - excerptStart);
                         item.ContentExcerpt = _deleteEmptyLinesRegex.Replace(item.ContentExcerpt, string.Empty);
                         result.Add(item);
                     }
@@ -141,6 +143,7 @@ namespace BookmarksBase.Search.Engine
         public string Url;
         public string Title;
         public string Content;
+        public string ContentsFileName;
     }
 
 }

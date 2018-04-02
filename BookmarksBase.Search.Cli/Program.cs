@@ -29,17 +29,16 @@ namespace BookmarksBase.Search.Cli
 
             if(operation == Operation.DefaultCli || operation == Operation.SingleRun)
             {
-                Action prompt = () =>
+                void prompt()
                 {
                     if (operation == Operation.DefaultCli)
                     {
                         Console.Write("? ");
-
                         find = Console.ReadLine();
                         if (find == ":q") Environment.Exit(0);
                         Console.Clear();
                     }
-                };
+                }
 
                 while (true)
                 {
@@ -50,6 +49,7 @@ namespace BookmarksBase.Search.Cli
                         Console.WriteLine("*** " + r.Title);
                         Console.WriteLine("### " + r.Url);
                         Console.WriteLine("    " + r.ContentExcerpt);
+                        Console.WriteLine("--------------");
                         Console.WriteLine();
                     }
                     if (operation == Operation.SingleRun) Environment.Exit(0);

@@ -17,7 +17,7 @@ namespace BookmarksBase.Importer
         readonly object _lck;
         readonly List<string> _errLog;
 
-        public abstract IList<Bookmark> GetBookmarks();
+        public abstract IEnumerable<Bookmark> GetBookmarks();
         protected BookmarksImporter(Options options)
         {
             if (!VerifyLynxDependencies())
@@ -27,39 +27,79 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol =
+                SecurityProtocolType.Ssl3 |
+                SecurityProtocolType.SystemDefault |
+                SecurityProtocolType.Tls12 |
+                SecurityProtocolType.Tls11 |
+                SecurityProtocolType.Tls
+                ;
+
+            if (Directory.Exists("data"))
+            {
+                Directory.Delete("data", true);
+            }
+            Directory.CreateDirectory("data");
         }
 
+        public string RemoveIllegalCharacters(string fileName)
+        {
+            string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+
+            foreach (char c in invalid)
+            {
+                fileName = fileName.Replace(c.ToString(), string.Empty);
+            }
+
+            return fileName;
+        }
+        
         public string Lynx(string url)
         {
-            string result = String.Empty;
             byte[] rawData = null;
+
+            if (url.Length > 150)
+            {
+                url = $"{url.Substring(0, 150)}{CreateMD5(url)}";
+            }
+
+            var contentFileName = Path.Combine("data", RemoveIllegalCharacters(url) + ".txt");
+            
             try
             {
                 using (var webClient = new BookmarksBaseWebClient(_options))
                 {
                     rawData = webClient.DownloadData(url);
-                    Trace.WriteLine("OK: " + url);
+                    Trace.WriteLine($"OK: {url} <br />");
                     if
                     (
+                        webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
                         !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
                         !webClient.ResponseHeaders["Content-Type"].ToString().Contains("/xhtml")
                     )
                     {
-                        result = "[Not text]";
-                        return result;
+                        File.WriteAllText(contentFileName, "Not text content type");
+                        return contentFileName;
                     }
                 }
-                var tempFileName = string.Format(@"{0}", Guid.NewGuid()) + ".htm";
+
+                var tempFileName = $"{Guid.NewGuid()}.htm";
                 File.WriteAllBytes(tempFileName, rawData);
                 using (Process lynx = new Process())
                 {
-                    lynx.StartInfo.FileName = BookmarksImporterConstants.LynxCommand;
+                    var currentDir = AppDomain.CurrentDomain.BaseDirectory;
+                    lynx.StartInfo.WorkingDirectory = currentDir;
+                    lynx.StartInfo.FileName = Path.Combine(currentDir, BookmarksImporterConstants.LynxCommand);
                     lynx.StartInfo.Arguments = BookmarksImporterConstants.LynxCommandLineOptions + tempFileName;
                     lynx.StartInfo.UseShellExecute = false;
                     lynx.StartInfo.RedirectStandardOutput = true;
+                    lynx.StartInfo.RedirectStandardError = true;
                     lynx.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                     lynx.Start();
-                    result = lynx.StandardOutput.ReadToEnd();
+                    var content = lynx.StandardOutput.ReadToEnd();
+                    File.WriteAllText(contentFileName, content);
+                    //var err = lynx.StandardError.ReadToEnd();
                     lynx.WaitForExit(BookmarksImporterConstants.WaitTimeoutForLynxProcess);
                 }
                 File.Delete(tempFileName);
@@ -70,30 +110,24 @@ namespace BookmarksBase.Importer
                 {
                     if (we.Status == WebExceptionStatus.ProtocolError)
                     {
-                        _errLog.Add("ERROR: " + url + " " + ((HttpWebResponse)we.Response).StatusCode.ToString());
+                        _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> {((HttpWebResponse)we.Response).StatusCode.ToString()}<br />");
                     }
                     else
                     {
-                        _errLog.Add("ERROR: " + url + " " + we.Status.ToString());
+                        _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> {we.Status.ToString()}<br />");
                     }
                 }
-                result = "[Error]";
+
+                File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}"); 
             }
-            return result;
+            return contentFileName;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0002:Convert anonymous method to method group", Justification = "<Pending>")]
-        public void LoadContents(IList<Bookmark> list)
+        public void LoadContents(IEnumerable<Bookmark> list)
         {
-            //foreach (var b in list)
-            //{
-            //    b.Contents = Lynx(b.Url);
-            //    Thread.Sleep(500);
-            //}
             Parallel.ForEach(
                 list,
-                //new ParallelOptions { MaxDegreeOfParallelism = 8 },
-                b => { b.Contents = Lynx(b.Url); }
+                b => { b.ContentsFileName = Lynx(b.Url); }
             );
             if (_errLog.Any())
             {
@@ -103,14 +137,14 @@ namespace BookmarksBase.Importer
             }
         }
 
-        public void SaveBookmarksBase(IList<Bookmark> list, string outputFile = "bookmarksbase.xml")
+        public void SaveBookmarksBase(IEnumerable<Bookmark> list, string outputFile = "bookmarksbase.xml")
         {
             var xws = new XmlWriterSettings()
             {
                 Encoding = Encoding.UTF8,
                 Indent = true
             };
-
+        
             using (var writer = XmlWriter.Create(outputFile, xws))
             {
                 writer.WriteStartElement("Bookmarks");
@@ -126,8 +160,8 @@ namespace BookmarksBase.Importer
                     writer.WriteString(bookmark.Title);
                     writer.WriteEndElement();
 
-                    writer.WriteStartElement("Content");
-                    writer.WriteString(bookmark.Contents);
+                    writer.WriteStartElement("ContentsFileName");
+                    writer.WriteString(bookmark.ContentsFileName);
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                 }
@@ -143,10 +177,25 @@ namespace BookmarksBase.Importer
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "libbz2.dll"))
             ;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0014:If all fields, properties and methods members are static, the class can be made static.", Justification = "<Pending>")]
+        protected string CreateMD5(string input)
+        {
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = Encoding.ASCII.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++)
+                {
+                    sb.Append(hashBytes[i].ToString("X2"));
+                }
+                return sb.ToString();
+            }
+        }
+
         public class BookmarksImporterConstants
         {
-            public const string LynxCommandLineOptions = " -nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
+            public const string LynxCommandLineOptions = "-nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
             public const string LynxCommand = "lynx\\lynx.exe";
             public const int WaitTimeoutForLynxProcess = 1000;
         }
@@ -155,7 +204,7 @@ namespace BookmarksBase.Importer
         {
             public string Url { get; set; }
             public string Title { get; set; }
-            public string Contents { get; set; }
+            public string ContentsFileName { get; set; }
         }
 
         public class Options

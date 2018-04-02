@@ -14,15 +14,15 @@ namespace BookmarksBase.Importer
 
         }
 
-        public override IList<Bookmark> GetBookmarks()
+        public override IEnumerable<Bookmark> GetBookmarks()
         {
             string dbFile = GetFirefoxBookmarksFile();
             if (dbFile == string.Empty)
             {
-                Trace.WriteLine("Firefox bookmarks file has not been found");
+                Trace.WriteLine("Firefox bookmarks file has not been found <br />");
                 return null;
             }
-            Trace.WriteLine("Firefox bookmarks file found: " + dbFile);
+            Trace.WriteLine("Firefox bookmarks file found: " + dbFile + " <br />");
             string cs = @"Data Source=" + dbFile + ";Version=3;";
             var list = new List<Bookmark>();
             using (SQLiteConnection con = new SQLiteConnection(cs))
@@ -42,7 +42,7 @@ namespace BookmarksBase.Importer
                     }
                 }
             }
-            Trace.WriteLine(list.Count + " bookmarks read");
+            Trace.WriteLine(list.Count + " bookmarks read <br />");
             return list;
         }
 
@@ -60,8 +60,11 @@ namespace BookmarksBase.Importer
                     bool file_exist = File.Exists(prof_file);
                     if (file_exist)
                     {
-                        var rdr = new StreamReader(prof_file);
-                        string resp = rdr.ReadToEnd();
+                        string resp;
+                        using (var rdr = new StreamReader(prof_file))
+                        {
+                            resp = rdr.ReadToEnd();
+                        }
                         string[] lines = resp.Split(new string[] { "\r\n" }, StringSplitOptions.None);
                         string location = lines.First(x => x.Contains("Path=")).Split(new string[] { "=" }, StringSplitOptions.None)[1];
                         location = location.Replace('/', '\\');
@@ -73,7 +76,6 @@ namespace BookmarksBase.Importer
             return string.Empty;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Language Usage Opportunities", "RECS0014:If all fields, properties and methods members are static, the class can be made static.", Justification = "<Pending>")]
         public class FirefoxBookmarksImporterConstants : BookmarksImporterConstants
         {
             public const string SQLForGetBookmarksWithUrl = @"
