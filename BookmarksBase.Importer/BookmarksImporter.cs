@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -16,6 +17,21 @@ namespace BookmarksBase.Importer
         readonly Options _options;
         readonly object _lck;
         readonly List<string> _errLog;
+        readonly ConcurrentBag<BookmarksBaseWebClient> _webClientPool;
+
+        private BookmarksBaseWebClient GetWebClientFromPool()
+        {
+            if (_webClientPool.TryTake(out BookmarksBaseWebClient wc))
+            {
+                return wc;
+            }
+            return new BookmarksBaseWebClient(_options);
+        }
+
+        private void PutWebClientToPool(BookmarksBaseWebClient wc)
+        {
+            _webClientPool.Add(wc);
+        }
 
         public abstract IEnumerable<Bookmark> GetBookmarks();
         protected BookmarksImporter(Options options)
@@ -27,6 +43,7 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
+            _webClientPool = new ConcurrentBag<BookmarksBaseWebClient>();
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Ssl3 |
@@ -54,7 +71,7 @@ namespace BookmarksBase.Importer
 
             return fileName;
         }
-        
+
         public string Lynx(string url)
         {
             byte[] rawData = null;
@@ -65,24 +82,26 @@ namespace BookmarksBase.Importer
             }
 
             var contentFileName = Path.Combine("data", RemoveIllegalCharacters(url) + ".txt");
-            
+
             try
             {
-                using (var webClient = new BookmarksBaseWebClient(_options))
+                var webClient = GetWebClientFromPool();
+
+                rawData = webClient.DownloadData(url);
+
+                Trace.WriteLine($"OK: {url} <br />");
+                if
+                (
+                    webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
+                    !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
+                    !webClient.ResponseHeaders["Content-Type"].ToString().Contains("/xhtml")
+                )
                 {
-                    rawData = webClient.DownloadData(url);
-                    Trace.WriteLine($"OK: {url} <br />");
-                    if
-                    (
-                        webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
-                        !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
-                        !webClient.ResponseHeaders["Content-Type"].ToString().Contains("/xhtml")
-                    )
-                    {
-                        File.WriteAllText(contentFileName, "Not text content type");
-                        return contentFileName;
-                    }
+                    PutWebClientToPool(webClient);
+                    File.WriteAllText(contentFileName, "Not text content type");
+                    return contentFileName;
                 }
+                PutWebClientToPool(webClient);
 
                 var tempFileName = $"{Guid.NewGuid()}.htm";
                 File.WriteAllBytes(tempFileName, rawData);
@@ -118,7 +137,7 @@ namespace BookmarksBase.Importer
                     }
                 }
 
-                File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}"); 
+                File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}");
             }
             return contentFileName;
         }
@@ -144,7 +163,7 @@ namespace BookmarksBase.Importer
                 Encoding = Encoding.UTF8,
                 Indent = true
             };
-        
+
             using (var writer = XmlWriter.Create(outputFile, xws))
             {
                 writer.WriteStartElement("Bookmarks");
