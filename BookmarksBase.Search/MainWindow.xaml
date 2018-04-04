@@ -76,7 +76,8 @@
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"  />
-                <RowDefinition Height="55"  />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="90"  />
             </Grid.RowDefinitions>
 
             <ListBox Grid.Row="0"
@@ -105,12 +106,18 @@
 
             </ListBox>
 
+            <GridSplitter 
+                Grid.Row="1" 
+                ResizeBehavior="PreviousAndNext" 
+                Height="2" 
+                HorizontalAlignment="Stretch" Margin="0,2" VerticalAlignment="Top" Background="#FF5694BF" />
+
             <TextBox x:Name="ExcerptTxt"
                      Text="{Binding ContentExcerpt}"
                      Background="#FFF3FDFF"
-                     Height="55"
-                     Grid.Row="1"
-                     Margin="0,5,0,0"
+                     Height="Auto"
+                     Grid.Row="2"
+                     Margin="0"
                      FontFamily="Consolas"
                      IsReadOnly="True"
                      Grid.ColumnSpan="2"
