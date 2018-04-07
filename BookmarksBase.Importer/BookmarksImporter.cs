@@ -179,6 +179,10 @@ namespace BookmarksBase.Importer
                     writer.WriteString(bookmark.Title);
                     writer.WriteEndElement();
 
+                    writer.WriteStartElement("DateAdded");
+                    writer.WriteString(bookmark.DateAdded.ToShortDateString());
+                    writer.WriteEndElement();
+
                     writer.WriteStartElement("ContentsFileName");
                     writer.WriteString(bookmark.ContentsFileName);
                     writer.WriteEndElement();
@@ -224,6 +228,7 @@ namespace BookmarksBase.Importer
             public string Url { get; set; }
             public string Title { get; set; }
             public string ContentsFileName { get; set; }
+            public DateTime DateAdded { get; set; }
         }
 
         public class Options

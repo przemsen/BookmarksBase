@@ -33,11 +33,17 @@ namespace BookmarksBase.Importer
                 {
                     while (rdr.Read())
                     {
+                        var dateAdded = rdr.GetInt64(rdr.GetOrdinal("dateAdded"));
                         var b = new Bookmark()
                         {
                             Url = rdr.GetString(rdr.GetOrdinal("url")),
-                            Title = rdr.GetString(rdr.GetOrdinal("title"))
+                            Title = rdr.GetString(rdr.GetOrdinal("title")),
                         };
+                        if (dateAdded > 0)
+                        {
+                            var dateAddedOffset = DateTimeOffset.FromUnixTimeSeconds(dateAdded);
+                            b.DateAdded = dateAddedOffset.UtcDateTime;
+                        }
                         list.Add(b);
                     }
                 }
@@ -79,11 +85,20 @@ namespace BookmarksBase.Importer
         public class FirefoxBookmarksImporterConstants : BookmarksImporterConstants
         {
             public const string SQLForGetBookmarksWithUrl = @"
-                SELECT b.[title], p.[url]
-                FROM [moz_places] p
-                INNER JOIN [moz_bookmarks] b ON p.[id] = b.[fk]
-                WHERE (b.[title] IS NOT NULL) AND (p.[url] LIKE 'http://%' OR p.[url] LIKE 'https://%')
-            ;";
+SELECT
+    b.[title],
+    p.[url],
+    (
+        (CASE 
+            WHEN b.dateAdded = 0 AND b.lastModified <> 0 THEN b.lastModified 
+            WHEN b.dateAdded <> 0 THEN b.dateAdded
+            ELSE 1 END
+        ) / 1000000
+    ) AS dateAdded
+FROM [moz_places] p
+JOIN [moz_bookmarks] b ON p.[id] = b.[fk]
+WHERE (b.[title] IS NOT NULL) AND (p.[url] LIKE 'http://%' OR p.[url] LIKE 'https://%')
+;";
 
         }
 
