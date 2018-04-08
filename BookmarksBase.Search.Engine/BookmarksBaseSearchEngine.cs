@@ -45,6 +45,7 @@ namespace BookmarksBase.Search.Engine
                 bookmarks[i].Title = b.Element("Title").Value;
                 bookmarks[i].Url = b.Element("Url").Value;
                 bookmarks[i].ContentsFileName =  b.Element("ContentsFileName").Value;
+                bookmarks[i].DateAdded = b.Element("DateAdded").Value;
                 i++;
             }
             return bookmarks;
@@ -69,7 +70,7 @@ namespace BookmarksBase.Search.Engine
                 var match = regex.Match(b.Url + b.Title);
                 if (match.Success)
                 {
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded));
                 }
                 else
                 {
@@ -77,7 +78,7 @@ namespace BookmarksBase.Search.Engine
                     match = regex.Match(content);
                     if (match.Success)
                     {
-                        var item = new BookmarkSearchResult(b.Url, b.Title, null);
+                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded);
 
                         int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
                         if (excerptStart < 0)
@@ -114,28 +115,26 @@ namespace BookmarksBase.Search.Engine
         {
             var result = from b in bookmarks
                          where b.Content == "[Error]"
-                         select new BookmarkSearchResult(b.Url, b.Title, null)
+                         select new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded)
                          ;
             return result;
-        }
-
-        public class Options
-        {
         }
 
     }
 
     public class BookmarkSearchResult
     {
-        public BookmarkSearchResult(string url, string title, string contentExcetpt)
+        public BookmarkSearchResult(string url, string title, string contentExcetpt, string dateAdded)
         {
             Url = url;
             Title = title;
             ContentExcerpt = contentExcetpt;
+            DateAdded = dateAdded;
         }
         public string Url { get; set; }
         public string Title { get; set; }
         public string ContentExcerpt { get; set; }
+        public string DateAdded { get; set; }
     }
 
     public struct Bookmark
@@ -144,6 +143,7 @@ namespace BookmarksBase.Search.Engine
         public string Title;
         public string Content;
         public string ContentsFileName;
+        public string DateAdded;
     }
 
 }

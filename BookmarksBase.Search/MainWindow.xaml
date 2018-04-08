@@ -80,36 +80,34 @@
                 <RowDefinition Height="90"  />
             </Grid.RowDefinitions>
 
-            <ListBox Grid.Row="0"
+            <ListView Grid.Row="0"
                      Grid.ColumnSpan="2"
                      ItemsSource="{Binding}"
                      IsSynchronizedWithCurrentItem="True"
                      Margin="0,4,0,0"
-                     Foreground="Blue"
+                     Foreground="#FF060672"
                      x:Name="UrlLst"
                      MouseDoubleClick="UrlLst_MouseDoubleClick"
                      IsTabStop="True"
                      TabIndex="2"
                      PreviewKeyDown="UrlLst_PreviewKeyDown"
-                     Focusable="False"
+                     Focusable="False" SizeChanged="UrlLst_SizeChanged"
+                      GridViewColumnHeader.Click="UrlLst_HeaderClick"
                      >
 
-                <!-- Without Focusable=False ListBox gains separate focus and its items also gain focus -->
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn  Header="URL" DisplayMemberBinding="{Binding Url}"  Width="450"/>
+                        <GridViewColumn  Header="DateAdded" DisplayMemberBinding="{Binding DateAdded}" Width="Auto" />
+                    </GridView>
+                </ListView.View>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Url}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
+            </ListView>
 
-            </ListBox>
-
-            <GridSplitter 
-                Grid.Row="1" 
-                ResizeBehavior="PreviousAndNext" 
-                Height="2" 
+            <GridSplitter
+                Grid.Row="1"
+                ResizeBehavior="PreviousAndNext"
+                Height="2"
                 HorizontalAlignment="Stretch" Margin="0,2" VerticalAlignment="Top" Background="#FF5694BF" />
 
             <TextBox x:Name="ExcerptTxt"

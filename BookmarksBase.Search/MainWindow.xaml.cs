@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BookmarksBase.Search.Engine;
 using System.Diagnostics;
+using System.ComponentModel;
+using System.Windows.Data;
 
 namespace BookmarksBase.Search
 {
@@ -18,6 +20,9 @@ namespace BookmarksBase.Search
     {
         BookmarksBaseSearchEngine _bookmarksEngine;
         Bookmark[] _bookmarks;
+
+        ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
+        ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
 
         public static readonly DependencyProperty DisplayHelp =
             DependencyProperty.Register(
@@ -118,6 +123,41 @@ namespace BookmarksBase.Search
                 fvi.FileBuildPart
             );
             StatusTxt.Text = status;
+        }
+
+        private void UrlLst_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged)
+            {
+                GridView view = this.UrlLst.View as GridView;
+                view.Columns[0].Width = this.Width - 130;
+
+            }
+        }
+
+        private void UrlLst_HeaderClick(object sender, RoutedEventArgs e )
+        {
+            GridViewColumnHeader column = e.OriginalSource as GridViewColumnHeader;
+            if (column == null) return;
+
+            ICollectionView resultDataView = CollectionViewSource.GetDefaultView(UrlLst.ItemsSource);
+            if (resultDataView == null) return;
+
+            resultDataView.SortDescriptions.Clear();
+
+            switch (column.Content.ToString())
+            {
+                case "URL":
+                    _urlSortDirection = (_urlSortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending);
+                    resultDataView.SortDescriptions.Add(new SortDescription("Url", _urlSortDirection));
+                    break;
+
+                case "DateAdded":
+                    _dateSortDirection = (_dateSortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending);
+                    resultDataView.SortDescriptions.Add(new SortDescription("DateAdded", _dateSortDirection));
+                    break;
+            }
+
         }
     }
 
