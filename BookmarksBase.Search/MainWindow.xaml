@@ -108,7 +108,11 @@
                 Grid.Row="1"
                 ResizeBehavior="PreviousAndNext"
                 Height="2"
-                HorizontalAlignment="Stretch" Margin="0,2" VerticalAlignment="Top" Background="#FF5694BF" />
+                HorizontalAlignment="Stretch" 
+                Margin="0,2" 
+                VerticalAlignment="Top" 
+                Background="#FF5694BF" 
+                IsTabStop="False"/>
 
             <TextBox x:Name="ExcerptTxt"
                      Text="{Binding ContentExcerpt}"
