@@ -59,7 +59,13 @@ namespace BookmarksBase.Search.Engine
 
         public IEnumerable<BookmarkSearchResult> DoSearch(Bookmark[] bookmarks, string pattern)
         {
+            bool inurl = false;
             pattern = SanitizePattern(pattern);
+            if (pattern.StartsWith("inurl:".ToLower()))
+            {
+                inurl = true;
+                pattern = pattern.Substring(6);
+            }
             var regex = new Regex(
                 pattern,
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline
@@ -67,12 +73,12 @@ namespace BookmarksBase.Search.Engine
             var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
             {
-                var match = regex.Match(b.Url + b.Title);
+                var match = regex.Match(inurl ? b.Url : b.Url + b.Title);
                 if (match.Success)
                 {
                     result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded));
                 }
-                else
+                else if (!inurl)
                 {
                     var content = File.ReadAllText(b.ContentsFileName);
                     match = regex.Match(content);

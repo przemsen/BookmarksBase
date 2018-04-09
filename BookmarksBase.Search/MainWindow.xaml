@@ -51,7 +51,7 @@
                          ToolTip="Type text to search for"
                          TabIndex="1"
                          PreviewKeyDown="FindTxt_PreviewKeyDown"
-                         Text="Type the text to search for within the bookmarks..."
+                         Text="Type the regex to search for within the bookmarks..."
                          Style="{StaticResource InitMsgStyle}"
                          GotFocus="FindTxt_GotFocus"
                          >
@@ -102,16 +102,22 @@
                     </GridView>
                 </ListView.View>
 
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Copy" Click="MenuItem_Click"/>
+                    </ContextMenu>
+                </ListView.ContextMenu>
+
             </ListView>
 
             <GridSplitter
                 Grid.Row="1"
                 ResizeBehavior="PreviousAndNext"
                 Height="2"
-                HorizontalAlignment="Stretch" 
-                Margin="0,2" 
-                VerticalAlignment="Top" 
-                Background="#FF5694BF" 
+                HorizontalAlignment="Stretch"
+                Margin="0,2"
+                VerticalAlignment="Top"
+                Background="#FF5694BF"
                 IsTabStop="False"/>
 
             <TextBox x:Name="ExcerptTxt"

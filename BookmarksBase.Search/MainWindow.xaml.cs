@@ -159,6 +159,13 @@ namespace BookmarksBase.Search
             }
 
         }
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (UrlLst.SelectedItem is BookmarkSearchResult b)
+            {
+                Clipboard.SetText(b.Url);
+            }
+        }
     }
 
     #region Adorner
