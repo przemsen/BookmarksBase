@@ -10,6 +10,7 @@ using BookmarksBase.Search.Engine;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Data;
+using System.Linq;
 
 namespace BookmarksBase.Search
 {
@@ -88,7 +89,11 @@ namespace BookmarksBase.Search
             {
                 if (e.Key == Key.Return)
                 {
-                    DataContext = _bookmarksEngine.DoSearch(_bookmarks, FindTxt.Text);
+                    DataContext =
+                        _bookmarksEngine
+                            .DoSearch(_bookmarks, FindTxt.Text)
+                            .OrderByDescending(b => b.DateAdded)
+                            ;
                 }
             }
             catch (ArgumentException ae)
