@@ -58,6 +58,7 @@ namespace BookmarksBase.Search
             AdornerLayer layer = AdornerLayer.GetAdornerLayer(FindTxt);
             layer.Add(new SearchIconAdorner(FindTxt));
             SetValue(DisplayHelp, true);
+            FindTxt.Focus();
         }
 
         void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)

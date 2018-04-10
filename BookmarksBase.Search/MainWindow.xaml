@@ -92,7 +92,7 @@
                      TabIndex="2"
                      PreviewKeyDown="UrlLst_PreviewKeyDown"
                      Focusable="False" SizeChanged="UrlLst_SizeChanged"
-                      GridViewColumnHeader.Click="UrlLst_HeaderClick"
+                      GridViewColumnHeader.Click="UrlLst_HeaderClick" FontSize="13"
                      >
 
                 <ListView.View>
@@ -129,7 +129,7 @@
                      FontFamily="Consolas"
                      IsReadOnly="True"
                      Grid.ColumnSpan="2"
-                     FontSize="13"
+                     FontSize="14"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
                      IsTabStop="False"
