@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Threading;
 
 namespace BookmarksBase.Search.Engine
 {
@@ -59,13 +60,20 @@ namespace BookmarksBase.Search.Engine
 
         public IEnumerable<BookmarkSearchResult> DoSearch(Bookmark[] bookmarks, string pattern)
         {
+            if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", System.StringComparison.CurrentCulture))
+            {
+                return bookmarks.Select(
+                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded)
+                );
+            }
             bool inurl = false;
             pattern = SanitizePattern(pattern);
-            if (pattern.StartsWith("inurl:".ToLower()))
+            if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("inurl:", System.StringComparison.CurrentCulture))
             {
                 inurl = true;
                 pattern = pattern.Substring(6);
             }
+
             var regex = new Regex(
                 pattern,
                 RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline
