@@ -49,10 +49,13 @@ namespace BookmarksBase.Importer
                 return;
             }
 
-            //bookmarks = bookmarks.Skip(15).Take(1);         
-
             fbi.LoadContents(bookmarks);
             fbi.SaveBookmarksBase(bookmarks);
+
+            if (args.Length > 0 && args[0] == "/batch")
+            {
+                return;
+            }
 
             Trace.WriteLine("Press any key to continue...");
             Console.ReadKey();
@@ -85,7 +88,7 @@ namespace BookmarksBase.Importer
                         {
                             zip.CreateEntryFromFile(f, f.Replace("\\", "/"));
                         }
-                        
+
                         Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
                     }
                 }
