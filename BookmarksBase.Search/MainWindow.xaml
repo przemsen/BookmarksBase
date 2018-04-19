@@ -44,7 +44,7 @@
                 <ColumnDefinition Width="80" />
             </Grid.ColumnDefinitions>
 
-            <AdornerDecorator Grid.ColumnSpan="2">
+            <AdornerDecorator Grid.ColumnSpan="2" ToolTip="Search">
                 <TextBox x:Name="FindTxt"
                          Height="28"
                          VerticalContentAlignment="Center"
