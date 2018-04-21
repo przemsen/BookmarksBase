@@ -205,6 +205,7 @@ namespace BookmarksBase.Search
             _visualCollection = new VisualCollection(this);
             _image = new Image();
             _border = new Border();
+            _border.Padding = new Thickness(1);
 
             _border.BorderBrush = _borderBrush2;
             _border.BorderThickness = new Thickness(1);
@@ -212,7 +213,7 @@ namespace BookmarksBase.Search
 
             _border.Child = _image;
             _image.Source = new BitmapImage(new Uri("pack://application:,,,/BookmarksBase.Search;component/searchicon.png"));
-            _image.Stretch = Stretch.Fill;
+            _image.Stretch = Stretch.Uniform;
 
             _visualCollection.Add(_border);
         }
@@ -237,7 +238,7 @@ namespace BookmarksBase.Search
                 _border.BorderThickness = new Thickness(1);
                 _border.Background = _bckgrBrush2;
             }
-        
+
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -255,7 +256,7 @@ namespace BookmarksBase.Search
         {
             double controlWidth = AdornedElement.RenderSize.Width;
             double controlHeight = AdornedElement.RenderSize.Height;
-            double imgSize = controlHeight - 10;
+            double imgSize = controlHeight - 9;
             _border.Width = imgSize;
             _border.Height = imgSize;
             _border.Arrange(new Rect(controlWidth - imgSize * 1.3, imgSize / 4 , imgSize, imgSize));

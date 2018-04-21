@@ -13,6 +13,8 @@ namespace BookmarksBase.Importer
 
         static void Main(string[] args)
         {
+            var dontWait = false;
+
             Setup();
             ArchiveExistingFiles();
 
@@ -24,6 +26,10 @@ namespace BookmarksBase.Importer
                 if (args[0] == "--socksproxyfriendly")
                 {
                     opts.SockProxyFriendly = true;
+                }
+                else if (args[0] == "/batch")
+                {
+                    dontWait = true;
                 }
                 else
                 {
@@ -52,7 +58,7 @@ namespace BookmarksBase.Importer
             fbi.LoadContents(bookmarks);
             fbi.SaveBookmarksBase(bookmarks);
 
-            if (args.Length > 0 && args[0] == "/batch")
+            if (dontWait)
             {
                 return;
             }
