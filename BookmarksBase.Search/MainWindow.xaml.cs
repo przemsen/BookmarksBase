@@ -235,6 +235,8 @@ namespace BookmarksBase.Search
             _border.BorderThickness = new Thickness(1);
             _border.Background = _bckgrBrush2;
 
+            _border.SnapsToDevicePixels = true;
+
             _border.Child = _image;
             _image.Source = new BitmapImage(new Uri("pack://application:,,,/BookmarksBase.Search;component/searchicon.png"));
             _image.Stretch = Stretch.Uniform;
