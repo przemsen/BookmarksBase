@@ -66,18 +66,26 @@ namespace BookmarksBase.Search.Engine
                     b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded)
                 );
             }
-            bool inurl = false;
+            bool inurl = false, caseSensitive = false;
+
             pattern = SanitizePattern(pattern);
+
             if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("inurl:", System.StringComparison.CurrentCulture))
             {
                 inurl = true;
                 pattern = pattern.Substring(6);
             }
+            else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("casesens:", System.StringComparison.CurrentCulture))
+            {
+                caseSensitive = true;
+                pattern = pattern.Substring(9);
+            }
 
             var regex = new Regex(
                 pattern,
-                RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline
+                RegexOptions.Compiled | (!caseSensitive ? RegexOptions.IgnoreCase : 0 ) | RegexOptions.Singleline
             );
+
             var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
             {

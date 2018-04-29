@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Data;
 using System.Linq;
+using System.Threading;
 
 namespace BookmarksBase.Search
 {
@@ -159,6 +160,29 @@ namespace BookmarksBase.Search
 
         public void DoSearch()
         {
+
+            if (
+                FindTxt.Text
+                    .ToLower(Thread.CurrentThread.CurrentCulture)
+                    .StartsWith("help:", StringComparison.CurrentCulture)
+
+                ||
+
+                FindTxt.Text
+                    .ToLower(Thread.CurrentThread.CurrentCulture)
+                    .StartsWith("?", System.StringComparison.CurrentCulture)
+            )
+            {
+                const string helpMsg = @"Available modifiers:
+'all:'         -- loads all bookmarks sorted by date descending
+'casesens:'    -- makes search case sensitive
+'help:' or '?' -- displays this text
+'inurl:'       -- searches only in the urls
+";
+                ExcerptTxt.Text = helpMsg;
+                return;
+            }
+
             try
             {
                 DataContext =
