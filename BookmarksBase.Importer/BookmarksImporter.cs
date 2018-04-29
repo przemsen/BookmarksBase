@@ -156,7 +156,7 @@ namespace BookmarksBase.Importer
             }
         }
 
-        public void SaveBookmarksBase(IEnumerable<Bookmark> list, string outputFile = "bookmarksbase.xml")
+        public void SaveBookmarksBase(IEnumerable<Bookmark> list, string outputFile = "bookmarksbase.xml", bool preCache = false)
         {
             var xws = new XmlWriterSettings()
             {
@@ -185,6 +185,10 @@ namespace BookmarksBase.Importer
 
                     writer.WriteStartElement("ContentsFileName");
                     writer.WriteString(bookmark.ContentsFileName);
+                    if (preCache)
+                    {
+                        File.ReadAllText(bookmark.ContentsFileName);
+                    }
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                 }

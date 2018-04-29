@@ -14,6 +14,7 @@ namespace BookmarksBase.Importer
         static void Main(string[] args)
         {
             var dontWait = false;
+            var preCache = dontWait;
 
             Setup();
             ArchiveExistingFiles();
@@ -29,7 +30,7 @@ namespace BookmarksBase.Importer
                 }
                 else if (args[0] == "/batch")
                 {
-                    dontWait = true;
+                    dontWait = preCache = true;
                 }
                 else
                 {
@@ -56,7 +57,7 @@ namespace BookmarksBase.Importer
             }
 
             fbi.LoadContents(bookmarks);
-            fbi.SaveBookmarksBase(bookmarks);
+            fbi.SaveBookmarksBase(bookmarks, preCache: preCache);
 
             if (dontWait)
             {
