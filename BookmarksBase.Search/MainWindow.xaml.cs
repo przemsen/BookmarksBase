@@ -183,13 +183,22 @@ namespace BookmarksBase.Search
                 return;
             }
 
+            ExcerptTxt.Text = null;
+
             try
             {
-                DataContext =
+                var result =
                     _bookmarksEngine
                         .DoSearch(_bookmarks, FindTxt.Text)
                         .OrderByDescending(b => b.DateAdded)
                         ;
+
+                DataContext = result;
+
+                if (!result.Any())
+                {
+                    ExcerptTxt.Text = "No results";
+                }
             }
             catch (ArgumentException ae)
             {
