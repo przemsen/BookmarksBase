@@ -6,11 +6,20 @@ using System.Xml.Linq;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
+using System;
 
 namespace BookmarksBase.Search.Engine
 {
     public class BookmarksBaseSearchEngine
     {
+        public class RegExException : Exception
+        {
+            public RegExException(string msg, Exception ie) : base(msg, ie)
+            {
+
+            }
+        }
+
         readonly Regex _deleteEmptyLinesRegex;
         XDocument _doc;
         public const string DB_FILE_NAME = "bookmarksbase.xml";
@@ -81,10 +90,20 @@ namespace BookmarksBase.Search.Engine
                 pattern = pattern.Substring(9);
             }
 
-            var regex = new Regex(
-                pattern,
-                RegexOptions.Compiled | (!caseSensitive ? RegexOptions.IgnoreCase : 0 ) | RegexOptions.Singleline
-            );
+            Regex regex = null;
+
+            try
+            {
+                regex = new Regex(
+                    pattern,
+                    RegexOptions.Compiled | (!caseSensitive ? RegexOptions.IgnoreCase : 0) | RegexOptions.Singleline
+                );
+            }
+            catch (Exception e)
+            {
+                var ex = new RegExException(e.Message, e);
+                throw ex;
+            }
 
             var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
@@ -94,7 +113,7 @@ namespace BookmarksBase.Search.Engine
                 {
                     result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded));
                 }
-                else if (!inurl)
+                else if (!inurl && !string.IsNullOrEmpty(b.ContentsFileName))
                 {
                     var content = File.ReadAllText(b.ContentsFileName);
                     match = regex.Match(content);

@@ -86,7 +86,6 @@ namespace BookmarksBase.Importer
             try
             {
                 var webClient = GetWebClientFromPool();
-
                 rawData = webClient.DownloadData(url);
 
                 Trace.WriteLine($"OK: {url} <br />");
@@ -137,7 +136,22 @@ namespace BookmarksBase.Importer
                     }
                 }
 
-                File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}");
+                try
+                {
+                    File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}");
+                }
+                catch
+                {
+                    contentFileName = null;
+                }
+            }
+            catch (Exception e)
+            {
+                lock (_lck)
+                {
+                    _errLog.Add(e.ToString());
+                }
+                contentFileName = null;
             }
             return contentFileName;
         }
@@ -146,7 +160,18 @@ namespace BookmarksBase.Importer
         {
             Parallel.ForEach(
                 list,
-                b => { b.ContentsFileName = Lynx(b.Url); }
+                b =>
+                {
+                    var contentsFileName = Lynx(b.Url);
+                    if (contentsFileName == null)
+                    {
+                        b.Title += " (erroneous)";
+                    }
+                    else
+                    {
+                        b.ContentsFileName = contentsFileName;
+                    }
+                }
             );
             if (_errLog.Any())
             {

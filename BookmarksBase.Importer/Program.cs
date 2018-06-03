@@ -4,6 +4,7 @@ using System.Net;
 using System.IO;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Collections.Generic;
 
 namespace BookmarksBase.Importer
 {
@@ -15,9 +16,14 @@ namespace BookmarksBase.Importer
         {
             var dontWait = false;
             var preCache = dontWait;
+            var debug = false;
 
             Setup();
-            ArchiveExistingFiles();
+
+            if (!debug)
+            {
+                ArchiveExistingFiles();
+            }
 
             Trace.WriteLine("Default importer: Fierfox");
 
@@ -50,7 +56,16 @@ namespace BookmarksBase.Importer
                 Environment.Exit(1);
             }
 
-            var bookmarks = fbi.GetBookmarks();
+            IEnumerable<BookmarksImporter.Bookmark> bookmarks = null;
+            if (debug)
+            {
+                bookmarks = GetMockData();
+            }
+            else
+            {
+                bookmarks = fbi.GetBookmarks();
+            }
+
             if (bookmarks == null)
             {
                 return;
@@ -65,13 +80,50 @@ namespace BookmarksBase.Importer
             }
 
             Trace.WriteLine("Press any key to continue...");
+            Trace.WriteLine("</body></html>");
             Console.ReadKey();
+        }
+
+        static IEnumerable<BookmarksImporter.Bookmark> GetMockData()
+        {
+            var ret = new List<BookmarksImporter.Bookmark>
+            {
+                new BookmarksImporter.Bookmark
+                {
+                     DateAdded = DateTime.Now,
+                     Title = "WP.pl",
+                     Url = "https://wp.pl"
+                },
+                new BookmarksImporter.Bookmark
+                {
+                     DateAdded = DateTime.Now,
+                     Title = "ONET.pl",
+                     Url = "https://onet.pl"
+                },
+                new BookmarksImporter.Bookmark
+                {
+                     DateAdded = DateTime.Now,
+                     Title = "o2.pl",
+                     Url = "https://o2.pl"
+                }
+            };
+            return ret;
         }
 
         static void Setup()
         {
             var tr1 = new TextWriterTraceListener(Console.Out);
             var tr2 = new TextWriterTraceListener(File.CreateText("log.htm"));
+            tr2.Write(
+@"<!doctype html>
+<html lang=""en"">
+<head>
+  <meta charset = ""utf-8"">
+  <title>BookmarksBase Importer log file</title>
+  </head>
+  <body>
+");
+            tr2.Flush();
             Trace.Listeners.Add(tr1);
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;

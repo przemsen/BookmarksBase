@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Windows.Data;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BookmarksBase.Search
 {
@@ -44,7 +45,7 @@ namespace BookmarksBase.Search
             {
                 _bookmarksEngine.Load();
                 _bookmarks = _bookmarksEngine.GetBookmarks();
-                DisplayStatus(_bookmarksEngine.GetCreationDate(), _bookmarks.Length);
+                DisplayStatus(_bookmarksEngine.GetCreationDate(), _bookmarks.Length, _bookmarks.Count(b => string.IsNullOrEmpty(b.ContentsFileName)));
                 _bookmarksEngine.Release();
             }
             catch (Exception)
@@ -101,18 +102,19 @@ namespace BookmarksBase.Search
             SetValue(DisplayHelp, false);
         }
 
-        void DisplayStatus(string creationDate, int count)
+        void DisplayStatus(string creationDate, int count, int erroneous)
         {
             System.Reflection.Assembly myself = System.Reflection.Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(myself.Location);
-            var status = string.Format(
-                "Loaded {0} bookmarks, created at {1}. Application version {2}.{3}.{4}",
-                count,
-                creationDate,
-                fvi.FileMajorPart,
-                fvi.FileMinorPart,
-                fvi.FileBuildPart
-            );
+            string status = null;
+            if (erroneous == 0)
+            {
+                status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
+            }
+            else
+            {
+                status = $"Loaded {count} bookmarks ({erroneous} warnings), created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
+            }
             StatusTxt.Text = status;
         }
 
@@ -158,7 +160,7 @@ namespace BookmarksBase.Search
             }
         }
 
-        public void DoSearch()
+        public async Task DoSearch()
         {
 
             if (
@@ -187,11 +189,16 @@ namespace BookmarksBase.Search
 
             try
             {
-                var result =
-                    _bookmarksEngine
-                        .DoSearch(_bookmarks, FindTxt.Text)
-                        .OrderByDescending(b => b.DateAdded)
-                        ;
+                var textToSearch = FindTxt.Text;
+                FindTxt.IsEnabled = false;
+
+                var result = await Task.Run(() =>
+                {
+                    return _bookmarksEngine
+                       .DoSearch(_bookmarks, textToSearch)
+                       .OrderByDescending(b => b.DateAdded)
+                       ;
+                });
 
                 DataContext = result;
 
@@ -200,14 +207,29 @@ namespace BookmarksBase.Search
                     ExcerptTxt.Text = "No results";
                 }
             }
-            catch (ArgumentException ae)
+            catch (BookmarksBaseSearchEngine.RegExException ree)
             {
                 MessageBox.Show(
-                    "Cannot create regular expression from given pattern. " + ae.Message,
+                    "Cannot create regular expression from given pattern. " + ree.InnerException.Message,
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(
+                    "An unexpected error occurred when performing search. " + e.InnerException?.Message,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+            }
+            finally
+            {
+                FindTxt.IsEnabled = true;
+                FindTxt.Focus();
             }
         }
     }
