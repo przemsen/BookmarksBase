@@ -21,6 +21,7 @@ namespace BookmarksBase.Search
     /// </summary>
     public partial class MainWindow : Window
     {
+        SearchIconAdorner _searchIconAdorner;
         BookmarksBaseSearchEngine _bookmarksEngine;
         Bookmark[] _bookmarks;
 
@@ -58,8 +59,9 @@ namespace BookmarksBase.Search
                 );
                 Application.Current.Shutdown();
             }
-            AdornerLayer layer = AdornerLayer.GetAdornerLayer(FindTxt);
-            layer.Add(new SearchIconAdorner(FindTxt));
+            var layer = AdornerLayer.GetAdornerLayer(FindTxt);
+            _searchIconAdorner = new SearchIconAdorner(FindTxt);
+            layer.Add(_searchIconAdorner);
             SetValue(DisplayHelp, true);
             FindTxt.Focus();
         }
@@ -70,7 +72,7 @@ namespace BookmarksBase.Search
             {
                 var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
                 if (currentBookmark == null) return;
-                System.Diagnostics.Process.Start(currentBookmark.Url);
+                Process.Start(currentBookmark.Url);
             }
 
         }
@@ -81,21 +83,21 @@ namespace BookmarksBase.Search
             {
                 var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
                 if (currentBookmark == null) return;
-                System.Diagnostics.Process.Start(currentBookmark.Url);
+                Process.Start(currentBookmark.Url);
             }
         }
 
-        void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
+        async void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
-                DoSearch();
+                await DoSearch();
             }
         }
 
         void FindTxt_GotFocus(object sender, RoutedEventArgs e)
         {
-            if ((bool)GetValue(DisplayHelp) == true)
+            if ((bool)GetValue(DisplayHelp))
             {
                 FindTxt.Text = string.Empty;
             }
@@ -104,8 +106,8 @@ namespace BookmarksBase.Search
 
         void DisplayStatus(string creationDate, int count, int erroneous)
         {
-            System.Reflection.Assembly myself = System.Reflection.Assembly.GetExecutingAssembly();
-            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(myself.Location);
+            var myself = System.Reflection.Assembly.GetExecutingAssembly();
+            var fvi = FileVersionInfo.GetVersionInfo(myself.Location);
             string status = null;
             if (erroneous == 0)
             {
@@ -148,6 +150,9 @@ namespace BookmarksBase.Search
                 case "DateAdded":
                     _dateSortDirection = (_dateSortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending);
                     resultDataView.SortDescriptions.Add(new SortDescription("DateAdded", _dateSortDirection));
+                    break;
+
+                default:
                     break;
             }
 
@@ -230,6 +235,7 @@ namespace BookmarksBase.Search
             {
                 FindTxt.IsEnabled = true;
                 FindTxt.Focus();
+                _searchIconAdorner.ResetHighlight();
             }
         }
     }
@@ -246,6 +252,8 @@ namespace BookmarksBase.Search
 
         readonly SolidColorBrush _bckgrBrush2;
         readonly SolidColorBrush _borderBrush2;
+
+        bool IsFindTxtEnabled => ((TextBox)AdornedElement).IsEnabled;
 
         public SearchIconAdorner(UIElement adornedElement) : base(adornedElement)
         {
@@ -277,7 +285,13 @@ namespace BookmarksBase.Search
 
         protected override void OnMouseEnter(MouseEventArgs e)
         {
+            if (!IsFindTxtEnabled)
+            {
+                return;
+            }
+
             var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
+
             if (b is Border border)
             {
                 _border.BorderBrush = _borderBrush;
@@ -288,7 +302,13 @@ namespace BookmarksBase.Search
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
+            if (!IsFindTxtEnabled)
+            {
+                return;
+            }
+
             var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
+
             if (b is Border border)
             {
                 _border.BorderBrush = _borderBrush2;
@@ -298,13 +318,25 @@ namespace BookmarksBase.Search
 
         }
 
-        protected override void OnMouseDown(MouseButtonEventArgs e)
+        protected override async void OnMouseDown(MouseButtonEventArgs e)
         {
+            if (!IsFindTxtEnabled)
+            {
+                return;
+            }
+
             var w = ((App)Application.Current).Windows[0] as MainWindow;
             if (w != null)
             {
-                w.DoSearch();
+                await w.DoSearch();
             }
+        }
+
+        public void ResetHighlight()
+        {
+            _border.BorderBrush = _borderBrush2;
+            _border.BorderThickness = new Thickness(1);
+            _border.Background = _bckgrBrush2;
         }
 
         protected override Visual GetVisualChild(int index) => _visualCollection[index];
