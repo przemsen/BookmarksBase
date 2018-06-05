@@ -37,7 +37,7 @@ namespace BookmarksBase.Importer
                         var url = rdr.GetString(rdr.GetOrdinal("url"));
                         if (list.Any(_ => _.Url == url))
                         {
-                            Trace.WriteLine($"{url} is duplicate bookmark. Skipping");
+                            Trace.WriteLine($"{url} is duplicate bookmark. Skipping <br />");
                             continue;
                         }
                         var b = new Bookmark()
