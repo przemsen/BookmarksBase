@@ -34,9 +34,15 @@ namespace BookmarksBase.Importer
                     while (rdr.Read())
                     {
                         var dateAdded = rdr.GetInt64(rdr.GetOrdinal("dateAdded"));
+                        var url = rdr.GetString(rdr.GetOrdinal("url"));
+                        if (list.Any(_ => _.Url == url))
+                        {
+                            Trace.WriteLine($"{url} is duplicate bookmark. Skipping");
+                            continue;
+                        }
                         var b = new Bookmark()
                         {
-                            Url = rdr.GetString(rdr.GetOrdinal("url")),
+                            Url = url,
                             Title = rdr.GetString(rdr.GetOrdinal("title")),
                         };
                         if (dateAdded > 0)
