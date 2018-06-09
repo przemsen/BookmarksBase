@@ -101,6 +101,8 @@ PRAGMA temp_store = MEMORY;
                             SiteContentsId = dataReader.GetInt64(3)
                         }
                     );
+                    // Cache the contents on load
+                    LoadContents(dataReader.GetInt64(3));
                 }
             }
             return ret;
@@ -109,9 +111,7 @@ PRAGMA temp_store = MEMORY;
         public void SaveBookmarksBase(IEnumerable<Bookmark> list)
         {
             const string insertSQL = "insert into Bookmark (Url, DateAdded, SiteContentsId, Title) values (@p0, @p1, @p2, @p3);";
-            const string vacuumSQL = "vacuum; pragma optimize;";
             using (var insertCommand = new SQLiteCommand(insertSQL, _sqliteCon))
-            using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteCon))
             {
                 foreach (var b in list)
                 {
@@ -122,7 +122,6 @@ PRAGMA temp_store = MEMORY;
                     insertCommand.Parameters.Add(new SQLiteParameter("@p3", b.Title));
                     insertCommand.ExecuteNonQuery();
                 }
-                vacuumCommand.ExecuteNonQuery();
             }
         }
 
@@ -162,6 +161,15 @@ PRAGMA temp_store = MEMORY;
                 }
             }
             return ret;
+        }
+
+        public void Vacuum()
+        {
+            const string vacuumSQL = "vacuum; pragma optimize;";
+            using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteCon))
+            {
+                vacuumCommand.ExecuteNonQuery();
+            }
         }
 
         #region IDisposable Support
