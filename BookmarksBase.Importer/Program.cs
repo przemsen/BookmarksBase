@@ -5,12 +5,13 @@ using System.IO;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Collections.Generic;
+using BookmarksBase.Storage;
 
 namespace BookmarksBase.Importer
 {
     class Program
     {
-        public const string DB_FILE_NAME = "bookmarksbase.xml";
+        public const string DB_FILE_NAME = "BookmarksBase.sqlite";
 
         static void Main(string[] args)
         {
@@ -30,11 +31,7 @@ namespace BookmarksBase.Importer
             var opts = new BookmarksImporter.Options();
             if (args.Any())
             {
-                if (args[0] == "--socksproxyfriendly")
-                {
-                    opts.SockProxyFriendly = true;
-                }
-                else if (args[0] == "/batch")
+                if (args[0] == "/batch")
                 {
                     dontWait = preCache = true;
                 }
@@ -45,62 +42,65 @@ namespace BookmarksBase.Importer
                 }
             }
 
-            FirefoxBookmarksImporter fbi = null;
-            try
+            using (var storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Writing))
             {
-                fbi = new FirefoxBookmarksImporter(opts);
-            }
-            catch (FileNotFoundException e)
-            {
-                Trace.WriteLine(e.Message);
-                Environment.Exit(1);
-            }
+                FirefoxBookmarksImporter fbi = null;
+                try
+                {
+                    fbi = new FirefoxBookmarksImporter(opts, storage);
+                }
+                catch (FileNotFoundException e)
+                {
+                    Trace.WriteLine(e.Message);
+                    Environment.Exit(1);
+                }
 
-            IEnumerable<BookmarksImporter.Bookmark> bookmarks = null;
-            if (debug)
-            {
-                bookmarks = GetMockData();
-            }
-            else
-            {
-                bookmarks = fbi.GetBookmarks();
-            }
+                IEnumerable<Bookmark> bookmarks = null;
+                if (debug)
+                {
+                    bookmarks = GetMockData();
+                }
+                else
+                {
+                    bookmarks = fbi.GetBookmarks();
+                }
 
-            if (bookmarks == null)
-            {
-                return;
+                if (bookmarks == null)
+                {
+                    return;
+                }
+
+                fbi.LoadContents(bookmarks);
+                storage.SaveBookmarksBase(bookmarks);
+
+                if (dontWait)
+                {
+                    return;
+                }
+
+                Trace.WriteLine("Press any key to continue...");
+                Trace.WriteLine("</body></html>");
             }
-
-            fbi.LoadContents(bookmarks);
-            fbi.SaveBookmarksBase(bookmarks, preCache: preCache);
-
-            if (dontWait)
-            {
-                return;
-            }
-
-            Trace.WriteLine("Press any key to continue...");
-            Trace.WriteLine("</body></html>");
             Console.ReadKey();
         }
 
-        static IEnumerable<BookmarksImporter.Bookmark> GetMockData()
+        static IEnumerable<Bookmark> GetMockData()
         {
-            var ret = new List<BookmarksImporter.Bookmark>
+            var ret = new List<Bookmark>
             {
-                new BookmarksImporter.Bookmark
+                new Bookmark
                 {
                      DateAdded = DateTime.Now,
                      Title = "WP.pl",
                      Url = "https://wp.pl"
                 },
-                new BookmarksImporter.Bookmark
+                new Bookmark
                 {
                      DateAdded = DateTime.Now,
                      Title = "ONET.pl",
                      Url = "https://onet.pl"
                 },
-                new BookmarksImporter.Bookmark
+                new Bookmark
                 {
                      DateAdded = DateTime.Now,
                      Title = "o2.pl",
@@ -143,10 +143,6 @@ namespace BookmarksBase.Importer
                     using (var zip = ZipFile.Open(DB_FILE_NAME + ".zip", ZipArchiveMode.Create))
                     {
                         zip.CreateEntryFromFile(DB_FILE_NAME, DB_FILE_NAME);
-                        foreach (var f in Directory.GetFiles("data"))
-                        {
-                            zip.CreateEntryFromFile(f, f.Replace("\\", "/"));
-                        }
 
                         Trace.WriteLine("Previous database file has been archived to " + DB_FILE_NAME + ".zip");
                     }

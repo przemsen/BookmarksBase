@@ -8,6 +8,7 @@
         WindowStartupLocation="CenterScreen"
         Icon="icon.ico"
         IsTabStop="False"
+        Closing="winMain_Closing"
         >
 
     <Window.Resources>

@@ -5,13 +5,13 @@ VisualStudioVersion = 15.0.27428.2037
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Importer", "BookmarksBase.Importer\BookmarksBase.Importer.csproj", "{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Search.Cli", "BookmarksBase.Search.Cli\BookmarksBase.Search.Cli.csproj", "{FFB1CA9F-3613-4F7C-9AB2-C84535745B2B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Search.Engine", "BookmarksBase.Search.Engine\BookmarksBase.Search.Engine.csproj", "{0A46B9B1-1F73-4502-BCE6-211F2470F289}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Tests", "BookmarksBase.Tests\BookmarksBase.Tests.csproj", "{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Search", "BookmarksBase.Search\BookmarksBase.Search.csproj", "{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Storage", "BookmarksBase.Storage\BookmarksBase.Storage.csproj", "{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,6 @@ Global
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FFB1CA9F-3613-4F7C-9AB2-C84535745B2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FFB1CA9F-3613-4F7C-9AB2-C84535745B2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FFB1CA9F-3613-4F7C-9AB2-C84535745B2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FFB1CA9F-3613-4F7C-9AB2-C84535745B2B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A46B9B1-1F73-4502-BCE6-211F2470F289}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A46B9B1-1F73-4502-BCE6-211F2470F289}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A46B9B1-1F73-4502-BCE6-211F2470F289}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

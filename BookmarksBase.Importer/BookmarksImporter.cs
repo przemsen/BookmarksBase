@@ -1,6 +1,8 @@
-﻿using System;
+﻿using BookmarksBase.Storage;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,6 +20,7 @@ namespace BookmarksBase.Importer
         readonly object _lck;
         readonly List<string> _errLog;
         readonly ConcurrentBag<BookmarksBaseWebClient> _webClientPool;
+        readonly BookmarksBaseStorageService _storage;
 
         private BookmarksBaseWebClient GetWebClientFromPool()
         {
@@ -34,7 +37,7 @@ namespace BookmarksBase.Importer
         }
 
         public abstract IEnumerable<Bookmark> GetBookmarks();
-        protected BookmarksImporter(Options options)
+        protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
         {
             if (!VerifyLynxDependencies())
             {
@@ -53,35 +56,13 @@ namespace BookmarksBase.Importer
                 SecurityProtocolType.Tls
                 ;
 
-            if (Directory.Exists("data"))
-            {
-                Directory.Delete("data", true);
-            }
-            Directory.CreateDirectory("data");
+            _storage = storage;
         }
 
-        public string RemoveIllegalCharacters(string fileName)
-        {
-            string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
-
-            foreach (char c in invalid)
-            {
-                fileName = fileName.Replace(c.ToString(), string.Empty);
-            }
-
-            return fileName;
-        }
-
-        public string Lynx(string url)
+        public long Lynx(string url)
         {
             byte[] rawData = null;
-
-            if (url.Length > 150)
-            {
-                url = $"{url.Substring(0, 150)}{CreateMD5(url)}";
-            }
-
-            var contentFileName = Path.Combine("data", RemoveIllegalCharacters(url) + ".txt");
+            long ret = 0;
 
             try
             {
@@ -97,8 +78,7 @@ namespace BookmarksBase.Importer
                 )
                 {
                     PutWebClientToPool(webClient);
-                    File.WriteAllText(contentFileName, "Not text content type");
-                    return contentFileName;
+                    return _storage.SaveContents("Not text content type");
                 }
                 PutWebClientToPool(webClient);
 
@@ -116,8 +96,7 @@ namespace BookmarksBase.Importer
                     lynx.StartInfo.StandardOutputEncoding = Encoding.UTF8;
                     lynx.Start();
                     var content = lynx.StandardOutput.ReadToEnd();
-                    File.WriteAllText(contentFileName, content);
-                    //var err = lynx.StandardError.ReadToEnd();
+                    ret = _storage.SaveContents(content);
                     lynx.WaitForExit(BookmarksImporterConstants.WaitTimeoutForLynxProcess);
                 }
                 File.Delete(tempFileName);
@@ -138,12 +117,9 @@ namespace BookmarksBase.Importer
 
                 try
                 {
-                    File.WriteAllText(contentFileName, $"Error: {we.Status.ToString()}");
+                    ret = _storage.SaveContents($"Error: {we.Status.ToString()}");
                 }
-                catch
-                {
-                    contentFileName = null;
-                }
+                catch { }
             }
             catch (Exception e)
             {
@@ -151,9 +127,8 @@ namespace BookmarksBase.Importer
                 {
                     _errLog.Add(e.ToString());
                 }
-                contentFileName = null;
             }
-            return contentFileName;
+            return ret;
         }
 
         public void LoadContents(IEnumerable<Bookmark> list)
@@ -162,14 +137,14 @@ namespace BookmarksBase.Importer
                 list,
                 b =>
                 {
-                    var contentsFileName = Lynx(b.Url);
-                    if (contentsFileName == null)
+                    var siteContetsId = Lynx(b.Url);
+                    if (siteContetsId == 0)
                     {
                         b.Title += " (erroneous)";
                     }
                     else
                     {
-                        b.ContentsFileName = contentsFileName;
+                        b.SiteContentsId = siteContetsId;
                     }
                 }
             );
@@ -181,69 +156,12 @@ namespace BookmarksBase.Importer
             }
         }
 
-        public void SaveBookmarksBase(IEnumerable<Bookmark> list, string outputFile = "bookmarksbase.xml", bool preCache = false)
-        {
-            var xws = new XmlWriterSettings()
-            {
-                Encoding = Encoding.UTF8,
-                Indent = true
-            };
-
-            using (var writer = XmlWriter.Create(outputFile, xws))
-            {
-                writer.WriteStartElement("Bookmarks");
-                writer.WriteAttributeString("CreationDate", DateTime.Now.ToString());
-                foreach (var bookmark in list)
-                {
-                    writer.WriteStartElement("Bookmark");
-                    writer.WriteStartElement("Url");
-                    writer.WriteString(bookmark.Url);
-                    writer.WriteEndElement();
-
-                    writer.WriteStartElement("Title");
-                    writer.WriteString(bookmark.Title);
-                    writer.WriteEndElement();
-
-                    writer.WriteStartElement("DateAdded");
-                    writer.WriteString(bookmark.DateAdded.ToShortDateString());
-                    writer.WriteEndElement();
-
-                    writer.WriteStartElement("ContentsFileName");
-                    writer.WriteString(bookmark.ContentsFileName);
-                    if (preCache)
-                    {
-                        File.ReadAllText(bookmark.ContentsFileName);
-                    }
-                    writer.WriteEndElement();
-                    writer.WriteEndElement();
-                }
-                writer.WriteEndElement();
-            }
-            Trace.WriteLine(outputFile + " saved");
-        }
-
         bool VerifyLynxDependencies() =>
             Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx")) &&
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.exe")) &&
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.cfg")) &&
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "libbz2.dll"))
             ;
-
-        protected string CreateMD5(string input)
-        {
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = Encoding.ASCII.GetBytes(input);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < hashBytes.Length; i++)
-                {
-                    sb.Append(hashBytes[i].ToString("X2"));
-                }
-                return sb.ToString();
-            }
-        }
 
         public class BookmarksImporterConstants
         {
@@ -252,13 +170,6 @@ namespace BookmarksBase.Importer
             public const int WaitTimeoutForLynxProcess = 1000;
         }
 
-        public class Bookmark
-        {
-            public string Url { get; set; }
-            public string Title { get; set; }
-            public string ContentsFileName { get; set; }
-            public DateTime DateAdded { get; set; }
-        }
 
         public class Options
         {

@@ -46,6 +46,12 @@
     <Compile Include="BookmarksBaseSearchEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BookmarksBase.Storage\BookmarksBase.Storage.csproj">
+      <Project>{d1f00331-affa-4eb0-8dee-eca282bcae0f}</Project>
+      <Name>BookmarksBase.Storage</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

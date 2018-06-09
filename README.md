@@ -16,12 +16,8 @@
 
 In application package you get:
 
-- `BookmarksBase.Importer` &mdash; **First run this tool** to generate database of bookmarks along with their contents. 
+- `BookmarksBase.Importer.exe` &mdash; **First run this tool** to generate database of bookmarks along with their contents. 
 - `BookmarksBase.Search.exe` &mdash; **Main application intended for searching.** It searches through text from bookmarked websites
-- `BookmarksBase.Search.Engine.dll` &mdash; Library file containing implementation of search.
-- `lynx` folder &mdash; Files of Lynx browser used for HTML parsing required by the importer.
-- `x64` and `x86` folders &mdash; Folders with runtime libraries required by the importer.
-- `System.Data.SQLite.dll` &mdash; Runtime library required by the importer.
 
 - When application starts, searching box is already focused. Start typing the text and press Enter.
 - You can use TAB to switch between search box and results list.
@@ -37,6 +33,7 @@ In application package you get:
 - `BookmarksBase.Search.Cli` &mdash; Command line version of searching application. Obsolete 
 - `BookmarksBase.Engine` &mdash; DLL library containing actual implementation of search. It is shared between both `Search` applications.
 - `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages.
+- `BookmarksBase.Storage` &mdash; DLL library with the implementation of writing web pages data into a file.
 
 # 3. Release notes #
 

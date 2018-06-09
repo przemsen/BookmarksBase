@@ -13,6 +13,7 @@ using System.Windows.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BookmarksBase.Storage;
 
 namespace BookmarksBase.Search
 {
@@ -23,7 +24,8 @@ namespace BookmarksBase.Search
     {
         SearchIconAdorner _searchIconAdorner;
         BookmarksBaseSearchEngine _bookmarksEngine;
-        Bookmark[] _bookmarks;
+        IList<Bookmark> _bookmarks;
+        BookmarksBaseStorageService _storage;
 
         ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
         ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
@@ -41,18 +43,17 @@ namespace BookmarksBase.Search
         public MainWindow()
         {
             InitializeComponent();
-            _bookmarksEngine = new BookmarksBaseSearchEngine();
+            _storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Reading);
+            _bookmarksEngine = new BookmarksBaseSearchEngine(_storage);
             try
             {
-                _bookmarksEngine.Load();
-                _bookmarks = _bookmarksEngine.GetBookmarks();
-                DisplayStatus(_bookmarksEngine.GetCreationDate(), _bookmarks.Length, _bookmarks.Count(b => string.IsNullOrEmpty(b.ContentsFileName)));
-                _bookmarksEngine.Release();
+                _bookmarks = _storage.LoadBookmarksBase();
+                DisplayStatus(_storage.LastModifiedOn.ToString(), _bookmarks.Count, _bookmarks.Count(b => b.SiteContentsId == 0));
             }
             catch (Exception)
             {
                 MessageBox.Show(
-                    "An error occured while loading bookmarksbase.xml file. Did you run BookmarksBase.Importer?",
+                    "An error occured while loading BookmarksBase.sqlite file. Did you run BookmarksBase.Importer?",
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning
@@ -237,6 +238,11 @@ namespace BookmarksBase.Search
                 FindTxt.Focus();
                 _searchIconAdorner.ResetHighlight();
             }
+        }
+
+        private void winMain_Closing(object sender, CancelEventArgs e)
+        {
+            _storage.Dispose();
         }
     }
 

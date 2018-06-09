@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System;
+using BookmarksBase.Storage;
 
 namespace BookmarksBase.Search.Engine
 {
@@ -21,58 +22,21 @@ namespace BookmarksBase.Search.Engine
         }
 
         readonly Regex _deleteEmptyLinesRegex;
-        XDocument _doc;
-        public const string DB_FILE_NAME = "bookmarksbase.xml";
+        readonly BookmarksBaseStorageService _storage;
         public const int DEFAULT_CONTEXT_LENGTH = 80;
 
-        public BookmarksBaseSearchEngine()
+        public BookmarksBaseSearchEngine(BookmarksBaseStorageService storage)
         {
             _deleteEmptyLinesRegex = new Regex(@"^\s*$[\r\n]*", RegexOptions.Compiled | RegexOptions.Multiline);
-            _doc = null;
+            _storage = storage;
         }
 
-        public void Load(string fileName = DB_FILE_NAME)
-        {
-            _doc = XDocument.Load(fileName);
-        }
-
-        public string GetCreationDate()
-        {
-            var root = _doc.Element("Bookmarks");
-            var date = root.Attribute("CreationDate").Value;
-            return date;
-        }
-
-        public Bookmark[] GetBookmarks()
-        {
-            var root = _doc.Descendants("Bookmarks");
-            var xbookmarks = root.Elements("Bookmark");
-            var count = xbookmarks.Count();
-            var bookmarks = new Bookmark[count];
-            int i = 0;
-            foreach(var b in xbookmarks)
-            {
-                bookmarks[i].Title = b.Element("Title").Value;
-                bookmarks[i].Url = b.Element("Url").Value;
-                bookmarks[i].ContentsFileName =  b.Element("ContentsFileName").Value;
-                bookmarks[i].DateAdded = b.Element("DateAdded").Value;
-                i++;
-            }
-            return bookmarks;
-        }
-
-        public void Release()
-        {
-            _doc = null;
-            System.GC.Collect();
-        }
-
-        public IEnumerable<BookmarkSearchResult> DoSearch(Bookmark[] bookmarks, string pattern)
+        public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<Bookmark> bookmarks, string pattern)
         {
             if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", System.StringComparison.CurrentCulture))
             {
                 return bookmarks.Select(
-                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded)
+                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString())
                 );
             }
             bool inurl = false, caseSensitive = false;
@@ -111,15 +75,15 @@ namespace BookmarksBase.Search.Engine
                 var match = regex.Match(inurl ? b.Url : b.Url + b.Title);
                 if (match.Success)
                 {
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString()));
                 }
-                else if (!inurl && !string.IsNullOrEmpty(b.ContentsFileName))
+                else if (!inurl && b.SiteContentsId != 0)
                 {
-                    var content = File.ReadAllText(b.ContentsFileName);
+                    var content = _storage.LoadContents(b.SiteContentsId);
                     match = regex.Match(content);
                     if (match.Success)
                     {
-                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded);
+                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString());
 
                         int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
                         if (excerptStart < 0)
@@ -152,15 +116,6 @@ namespace BookmarksBase.Search.Engine
             return pattern;
         }
 
-        public IEnumerable<BookmarkSearchResult> DoDeadSearch(Bookmark[] bookmarks)
-        {
-            var result = from b in bookmarks
-                         where b.Content == "[Error]"
-                         select new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded)
-                         ;
-            return result;
-        }
-
     }
 
     public class BookmarkSearchResult
@@ -176,15 +131,6 @@ namespace BookmarksBase.Search.Engine
         public string Title { get; set; }
         public string ContentExcerpt { get; set; }
         public string DateAdded { get; set; }
-    }
-
-    public struct Bookmark
-    {
-        public string Url;
-        public string Title;
-        public string Content;
-        public string ContentsFileName;
-        public string DateAdded;
     }
 
 }

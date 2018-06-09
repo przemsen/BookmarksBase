@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("BookmarksBase Engine")]
-[assembly: AssemblyDescription("Search implementation common for BookmarksBase applications")]
+[assembly: AssemblyTitle("BookmarksBase.Storage")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Przemysław Seneczko")]
-[assembly: AssemblyProduct("BookmarksBase Engine")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("BookmarksBase.Storage")]
 [assembly: AssemblyCopyright("Copyright © Przemysław Seneczko")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("957e4f30-19f4-41f6-97d9-e5a5201332f6")]
+[assembly: Guid("d1f00331-affa-4eb0-8dee-eca282bcae0f")]
 
 // Version information for an assembly consists of the following four values:
 //

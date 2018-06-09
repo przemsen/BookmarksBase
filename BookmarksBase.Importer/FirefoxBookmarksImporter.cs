@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BookmarksBase.Storage;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -9,7 +10,8 @@ namespace BookmarksBase.Importer
 {
     public class FirefoxBookmarksImporter : BookmarksImporter
     {
-        public FirefoxBookmarksImporter(BookmarksImporter.Options options) : base(options)
+        public FirefoxBookmarksImporter(BookmarksImporter.Options options, BookmarksBaseStorageService storage)
+            : base(options, storage)
         {
 
         }
