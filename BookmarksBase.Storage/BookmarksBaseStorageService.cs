@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BookmarksBase.Storage
 {
@@ -86,7 +82,7 @@ PRAGMA temp_store = MEMORY;
         public IList<Bookmark> LoadBookmarksBase()
         {
             const string selectSQL = "select Url, Title, DateAdded, SiteContentsId from Bookmark;";
-            var ret = new List<Bookmark>();
+            var ret = new List<Bookmark>(2000);
             using (var selectCommand = new SQLiteCommand(selectSQL, _sqliteCon))
             using (var dataReader = selectCommand.ExecuteReader())
             {
