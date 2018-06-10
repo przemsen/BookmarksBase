@@ -97,8 +97,6 @@ PRAGMA temp_store = MEMORY;
                             SiteContentsId = dataReader.GetInt64(3)
                         }
                     );
-                    // Cache the contents on load
-                    LoadContents(dataReader.GetInt64(3));
                 }
             }
             return ret;
