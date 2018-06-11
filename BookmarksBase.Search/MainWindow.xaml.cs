@@ -186,6 +186,7 @@ namespace BookmarksBase.Search
 'casesens:'    -- makes search case sensitive
 'help:' or '?' -- displays this text
 'inurl:'       -- searches only in the urls
+'intitle:'     -- searches only in the titles
 ";
                 ExcerptTxt.Text = helpMsg;
                 return;

@@ -39,7 +39,7 @@ namespace BookmarksBase.Search.Engine
                     b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString())
                 );
             }
-            bool inurl = false, caseSensitive = false;
+            bool inurl = false, caseSensitive = false, intitle = false;
 
             pattern = SanitizePattern(pattern);
 
@@ -52,6 +52,11 @@ namespace BookmarksBase.Search.Engine
             {
                 caseSensitive = true;
                 pattern = pattern.Substring(9);
+            }
+            else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("intitle:", System.StringComparison.CurrentCulture))
+            {
+                intitle = true;
+                pattern = pattern.Substring(8);
             }
 
             Regex regex = null;
@@ -72,12 +77,12 @@ namespace BookmarksBase.Search.Engine
             var result = new ConcurrentBag<BookmarkSearchResult>();
             Parallel.ForEach(bookmarks, b =>
             {
-                var match = regex.Match(inurl ? b.Url : b.Url + b.Title);
+                var match = regex.Match(inurl ? b.Url : (intitle ? b.Title : b.Url + b.Title));
                 if (match.Success)
                 {
                     result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString()));
                 }
-                else if (!inurl && b.SiteContentsId != 0)
+                else if (!inurl && !intitle && b.SiteContentsId != 0)
                 {
                     var content = _storage.LoadContents(b.SiteContentsId);
                     match = regex.Match(content);

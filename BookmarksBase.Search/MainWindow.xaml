@@ -64,13 +64,12 @@
         <TextBox x:Name="TitleTxt"
                  Grid.Row="1"
                  Height="28"
-                 IsReadOnly="True"
                  Background="#FFF3FDFF"
                  Text="{Binding Title}"
                  FontWeight="Bold"
                  VerticalContentAlignment="Center"
                  IsTabStop="False"
-                 Focusable="False"
+                 IsReadOnlyCaretVisible="True"
         />
 
         <Grid Grid.Row="2"  >
