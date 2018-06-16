@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BookmarksBase.Storage;
+using System.IO;
 
 namespace BookmarksBase.Search
 {
@@ -222,6 +223,11 @@ namespace BookmarksBase.Search
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
+                File.WriteAllText("error.log", ree.StackTrace);
+                if (ree.InnerException != null)
+                {
+                    File.AppendAllText("error.log", "---" + Environment.NewLine + ree.InnerException.StackTrace);
+                }
             }
             catch (Exception e)
             {
@@ -231,7 +237,11 @@ namespace BookmarksBase.Search
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-
+                File.WriteAllText("error.log", e.StackTrace);
+                if (e.InnerException != null)
+                {
+                    File.AppendAllText("error.log", "---" + Environment.NewLine + e.InnerException.StackTrace);
+                }
             }
             finally
             {
