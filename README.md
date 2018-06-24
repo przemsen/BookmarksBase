@@ -6,7 +6,7 @@
 
 # How to start? #
 
-- Download current release: **[Download link](https://github.com/przemsen/BookmarksBase/releases/download/2%2C0/BookmarksBase.zip)**
+- Download current release: **[Download link](https://github.com/przemsen/BookmarksBase/releases/latest)**
 - Run `BookmarksBase.Importer`. It reads all your bookmarks, downloads clean text from the bookmarked websites and stores in current folder as plain text files.
 - Enjoy using `BookmarksBase.Search.exe`. It supports regular expressions and searches in the indexed web page contents. Type `help:` to view some extra features. 
 
