@@ -33,10 +33,13 @@ namespace BookmarksBase.Search.Engine
 
         public IEnumerable<BookmarkSearchResult> DoSearch(IEnumerable<Bookmark> bookmarks, string pattern)
         {
-            if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", System.StringComparison.CurrentCulture))
+            if (
+                pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", StringComparison.CurrentCulture)
+                || string.IsNullOrEmpty(pattern)
+            )
             {
                 return bookmarks.Select(
-                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString())
+                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime())
                 );
             }
             bool inurl = false, caseSensitive = false, intitle = false;
@@ -80,7 +83,7 @@ namespace BookmarksBase.Search.Engine
                 var match = regex.Match(inurl ? b.Url : (intitle ? b.Title : b.Url + b.Title));
                 if (match.Success)
                 {
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString()));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime()));
                 }
                 else if (!inurl && !intitle && b.SiteContentsId != 0)
                 {
@@ -88,7 +91,7 @@ namespace BookmarksBase.Search.Engine
                     match = regex.Match(content);
                     if (match.Success)
                     {
-                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToShortDateString());
+                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime());
 
                         int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
                         if (excerptStart < 0)
