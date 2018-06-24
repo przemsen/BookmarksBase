@@ -19,24 +19,24 @@ In application package you get:
 - `BookmarksBase.Importer.exe` &mdash; **First run this tool** to generate database of bookmarks along with their contents. 
 - `BookmarksBase.Search.exe` &mdash; **Main application intended for searching.** It searches through text from bookmarked websites
 
-- When application starts, searching box is already focused. Start typing the text and press Enter.
-- You can use TAB to switch between search box and results list.
-- You can move up and down using keyboard when results list is focused.
-- Search is case insensitive and a text you enter is compiled as a regular expression.
-- If you wish to express any number of any characters use `.*`.
-- Double click on results list item opens it in a web browser.
-- Enter while focused on results list also opens selected item in a web browser.
+- When application starts, searching box is already focused. Start typing the text and press Enter
+- You can use TAB to switch between search box and results list
+- You can move up and down using keyboard when results list is focused
+- Search is case insensitive and a text you enter is compiled as a regular expression
+- If you wish to express any number of any characters use `.*`
+- Double click on results list item opens it in a web browser
+- Enter while focused on results list also opens selected item in a web browser
 
 # 2. Source code structure #
 
-- `BookmarksBase.Search` &mdash; WPF application to perform searches. 
+- `BookmarksBase.Search` &mdash; WPF application to perform searches
 - `BookmarksBase.Search.Cli` &mdash; Command line version of searching application. Obsolete 
-- `BookmarksBase.Engine` &mdash; DLL library containing actual implementation of search. It is shared between both `Search` applications.
-- `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages.
-- `BookmarksBase.Storage` &mdash; DLL library with the implementation of writing web pages data into a file.
+- `BookmarksBase.Engine` &mdash; DLL library containing actual implementation of search. It is shared between both `Search` applications
+- `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages
+- `BookmarksBase.Storage` &mdash; DLL library with the implementation of writing web pages data into a file
 
 # 3. Release notes #
 
 - All applications are compiled for .NET Framework version 4.7.1
-- Currently only Firefox web browser is supported. Other implementations can easily be created by inheriting `BookmarksImporter` class (following open-closed principle). 
-- HTML parsing is done with [Lynx](http://lynx.isc.org) and thus its binaries are required to run the importer.
+- Currently only Firefox web browser is supported. Other implementations can easily be created by inheriting `BookmarksImporter` class (following open-closed principle)
+- HTML parsing is done with [Lynx](http://lynx.isc.org) and thus its binaries (included) are required to run the importer
