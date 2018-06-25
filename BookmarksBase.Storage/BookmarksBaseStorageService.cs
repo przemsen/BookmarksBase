@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -9,7 +10,7 @@ namespace BookmarksBase.Storage
     {
         const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
         public DateTime LastModifiedOn { get; }
-        readonly Dictionary<long, string> _cache;
+        readonly IDictionary<long, string> _cache;
         readonly object _lock;
 
         public enum OperationMode
@@ -31,7 +32,7 @@ namespace BookmarksBase.Storage
             if (op == OperationMode.Reading)
             {
                 LastModifiedOn = File.GetLastWriteTime(databaseFileName);
-                _cache = new Dictionary<long, string>();
+                _cache = new ConcurrentDictionary<long, string>();
                 _sqliteCon = new SQLiteConnection($"Data Source={databaseFileName}; Read Only = True;");
             }
             else
