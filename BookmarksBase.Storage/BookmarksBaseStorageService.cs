@@ -19,6 +19,8 @@ namespace BookmarksBase.Storage
             Reading
         }
 
+        private OperationMode _operationMode;
+
         readonly SQLiteConnection _sqliteCon;
         bool disposedValue = false;
 
@@ -46,37 +48,7 @@ namespace BookmarksBase.Storage
             }
 
             _sqliteCon.Open();
-
-            if (op == OperationMode.Writing)
-            {
-                const string dbPreparationSQL =
-@"
-CREATE TABLE IF NOT EXISTS SiteContents (
- Id INTEGER NOT NULL PRIMARY KEY,
- Text text 
-);
-
-CREATE TABLE IF NOT EXISTS Bookmark (
- Id INTEGER NOT NULL PRIMARY KEY,
- Url TEXT,
- Title TEXT,
- SiteContentsId INTEGER NOT NULL,
- DateAdded DATETIME,
- FOREIGN KEY (SiteContentsId) REFERENCES SiteContents (Id)
-);
-
-DELETE FROM SiteContents;
-DELETE FROM Bookmark;
-PRAGMA synchronous = 0;
-PRAGMA journal_mode = MEMORY;
-PRAGMA temp_store = MEMORY;
-";
-
-                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
-                {
-                    dnPreparationCommand.ExecuteNonQuery();
-                }
-            }
+            _operationMode = op;
 
         }
 
@@ -164,6 +136,41 @@ PRAGMA temp_store = MEMORY;
             using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteCon))
             {
                 vacuumCommand.ExecuteNonQuery();
+            }
+        }
+
+        public void Init()
+        {
+            if (_operationMode == OperationMode.Writing)
+            {
+                const string dbPreparationSQL =
+@"
+CREATE TABLE IF NOT EXISTS SiteContents (
+ Id INTEGER NOT NULL PRIMARY KEY,
+ Text text 
+);
+
+CREATE TABLE IF NOT EXISTS Bookmark (
+ Id INTEGER NOT NULL PRIMARY KEY,
+ Url TEXT,
+ Title TEXT,
+ SiteContentsId INTEGER NOT NULL,
+ DateAdded DATETIME,
+ FOREIGN KEY (SiteContentsId) REFERENCES SiteContents (Id)
+);
+
+DELETE FROM SiteContents;
+DELETE FROM Bookmark;
+PRAGMA synchronous = 0;
+PRAGMA journal_mode = MEMORY;
+PRAGMA temp_store = MEMORY;
+";
+
+                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
+                {
+                    dnPreparationCommand.ExecuteNonQuery();
+                }
+
             }
         }
 

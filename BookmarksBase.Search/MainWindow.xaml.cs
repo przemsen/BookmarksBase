@@ -44,20 +44,34 @@ namespace BookmarksBase.Search
         public MainWindow()
         {
             InitializeComponent();
-            _storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Reading);
-            _bookmarksEngine = new BookmarksBaseSearchEngine(_storage);
+            var theApp = (App)Application.Current;
+
             try
             {
+                if (theApp.DataBasePathFromCommandLineArg != null)
+                {
+                    _storage = new BookmarksBaseStorageService(
+                        BookmarksBaseStorageService.OperationMode.Reading,
+                        theApp.DataBasePathFromCommandLineArg
+                    );
+                }
+                else
+                {
+                    _storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Reading);
+                }
+
+                _bookmarksEngine = new BookmarksBaseSearchEngine(_storage);
+
                 _bookmarks = _storage.LoadBookmarksBase();
                 DisplayStatus(_storage.LastModifiedOn.ToString(), _bookmarks.Count, _bookmarks.Count(b => b.SiteContentsId == 0));
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 MessageBox.Show(
-                    "An error occured while loading BookmarksBase.sqlite file. Did you run BookmarksBase.Importer?",
+                    $"An error occured while loading BookmarksBase.sqlite file. {e.Message}",
                     "Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning
+                    MessageBoxImage.Error
                 );
                 Application.Current.Shutdown();
             }
@@ -253,7 +267,10 @@ namespace BookmarksBase.Search
 
         private void winMain_Closing(object sender, CancelEventArgs e)
         {
-            _storage.Dispose();
+            if (_storage != null)
+            {
+                _storage.Dispose();
+            }
         }
     }
 

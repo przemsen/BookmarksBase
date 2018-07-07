@@ -13,5 +13,14 @@ namespace BookmarksBase.Search
     /// </summary>
     public partial class App : Application
     {
+        public string DataBasePathFromCommandLineArg { get; set; }
+
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
+            if (e.Args.Length == 1)
+            {
+                DataBasePathFromCommandLineArg = e.Args[0];
+            }
+        }
     }
 }

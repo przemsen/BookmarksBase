@@ -52,6 +52,7 @@ namespace BookmarksBase.Importer
                 catch (FileNotFoundException e)
                 {
                     Trace.WriteLine(e.Message);
+                    storage.Dispose();
                     Environment.Exit(1);
                 }
 
@@ -70,9 +71,12 @@ namespace BookmarksBase.Importer
                     return;
                 }
 
+                storage.Init();
+
                 fbi.LoadContents(bookmarks);
-                storage.Vacuum();
                 storage.SaveBookmarksBase(bookmarks);
+
+                storage.Vacuum();
 
                 if (dontWait)
                 {
