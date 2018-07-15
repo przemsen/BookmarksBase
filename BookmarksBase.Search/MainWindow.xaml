@@ -49,10 +49,9 @@
                 <TextBox x:Name="FindTxt"
                          Height="28"
                          VerticalContentAlignment="Center"
-                         ToolTip="Type text to search for"
+                         ToolTip="Type the regular expression to search for within the bookmarks"
                          TabIndex="1"
                          PreviewKeyDown="FindTxt_PreviewKeyDown"
-                         Text="Type the regex to search for within the bookmarks..."
                          Style="{StaticResource InitMsgStyle}"
                          GotFocus="FindTxt_GotFocus"
                          >

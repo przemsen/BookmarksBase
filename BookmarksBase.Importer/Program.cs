@@ -76,7 +76,7 @@ namespace BookmarksBase.Importer
                 fbi.LoadContents(bookmarks);
                 storage.SaveBookmarksBase(bookmarks);
 
-                storage.Vacuum();
+                storage.Commit();
 
                 if (dontWait)
                 {

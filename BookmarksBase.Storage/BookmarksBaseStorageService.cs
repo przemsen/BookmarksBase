@@ -36,6 +36,14 @@ namespace BookmarksBase.Storage
                 LastModifiedOn = File.GetLastWriteTime(databaseFileName);
                 _cache = new ConcurrentDictionary<long, string>();
                 _sqliteCon = new SQLiteConnection($"Data Source={databaseFileName}; Read Only = True;");
+                _sqliteCon.Open();
+
+                // Rely on own cache of SiteContents. Don't cache any pages in sqlite
+                const string dbPreparationSQL = "PRAGMA cache_size=0";
+                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
+                {
+                    dnPreparationCommand.ExecuteNonQuery();
+                }
             }
             else
             {
@@ -45,9 +53,9 @@ namespace BookmarksBase.Storage
                     SQLiteConnection.CreateFile(databaseFileName);
                 }
                 _sqliteCon = new SQLiteConnection($"Data Source={databaseFileName};");
+                _sqliteCon.Open();
             }
 
-            _sqliteCon.Open();
             _operationMode = op;
 
         }
@@ -130,9 +138,9 @@ namespace BookmarksBase.Storage
             return ret;
         }
 
-        public void Vacuum()
+        public void Commit()
         {
-            const string vacuumSQL = "vacuum; pragma optimize;";
+            const string vacuumSQL = "commit; vacuum; pragma optimize;";
             using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteCon))
             {
                 vacuumCommand.ExecuteNonQuery();
@@ -164,6 +172,8 @@ DELETE FROM Bookmark;
 PRAGMA synchronous = 0;
 PRAGMA journal_mode = MEMORY;
 PRAGMA temp_store = MEMORY;
+PRAGMA cache_size = 0;
+BEGIN TRANSACTION;
 ";
 
                 using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
