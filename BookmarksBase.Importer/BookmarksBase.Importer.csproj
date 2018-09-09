@@ -56,6 +56,7 @@
     <Compile Include="BookmarksBaseWebClient.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="BookmarksHtmlExporter.cs" />
     <Compile Include="BookmarksImporter.cs" />
     <Compile Include="FirefoxBookmarksImporter.cs" />
     <Compile Include="Program.cs" />
@@ -69,6 +70,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bookmarks_template.htm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="icon.ico" />
     <Content Include="lynx\libbz2.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -15,9 +15,9 @@ namespace BookmarksBase.Importer
 
         static void Main(string[] args)
         {
+            const bool debug = false;
             var dontWait = false;
             var preCache = dontWait;
-            var debug = false;
 
             Setup();
 
@@ -70,6 +70,9 @@ namespace BookmarksBase.Importer
                 {
                     return;
                 }
+
+                var htmlExporter = new BookmarksHtmlExporter(bookmarks);
+                htmlExporter.WriteHtml();
 
                 storage.Init();
 

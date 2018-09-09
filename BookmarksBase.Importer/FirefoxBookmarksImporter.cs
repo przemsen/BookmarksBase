@@ -19,7 +19,7 @@ namespace BookmarksBase.Importer
         public override IEnumerable<Bookmark> GetBookmarks()
         {
             string dbFile = GetFirefoxBookmarksFile();
-            if (dbFile == string.Empty)
+            if (dbFile.Length == 0)
             {
                 Trace.WriteLine("Firefox bookmarks file has not been found <br />");
                 return null;
@@ -57,7 +57,7 @@ namespace BookmarksBase.Importer
                 }
             }
             Trace.WriteLine(list.Count + " bookmarks read <br />");
-            return list;
+            return list.OrderByDescending(b => b.DateAdded).ToList();
         }
 
         string GetFirefoxBookmarksFile()
