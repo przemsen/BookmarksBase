@@ -3,11 +3,10 @@ mkdir -force .\dist
 mkdir -force .\dist\BookmarksBase
 
 Copy-Item .\BookmarksBase.Search\bin\Release\BookmarksBase.Search.exe -Destination .\dist\BookmarksBase
-Copy-Item .\BookmarksBase.Search\bin\Release\BookmarksBase.Search.Engine.dll -Destination .\dist\BookmarksBase
 Copy-Item .\BookmarksBase.Importer\bin\Release\System.Data.SQLite.dll -Destination .\dist\BookmarksBase
 Copy-Item .\BookmarksBase.Importer\bin\Release\BookmarksBase.Importer.exe -Destination .\dist\BookmarksBase
-Copy-Item .\BookmarksBase.Importer\bin\Release\BookmarksBase.Importer.exe -Destination .\dist\BookmarksBase
 Copy-Item .\BookmarksBase.Storage\bin\Release\BookmarksBase.Storage.dll -Destination .\dist\BookmarksBase
+Copy-Item .\BookmarksBase.Importer\bin\Release\bookmarks_template.htm -Destination .\dist\BookmarksBase
 
 Copy-Item .\BookmarksBase.Importer\bin\Release\lynx -Destination .\dist\BookmarksBase -Recurse
 Copy-Item .\BookmarksBase.Importer\bin\Release\x64 -Destination .\dist\BookmarksBase -Recurse

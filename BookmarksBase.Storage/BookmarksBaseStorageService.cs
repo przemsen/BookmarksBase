@@ -1,28 +1,31 @@
-﻿using System;
+﻿using BookmarksBase.Search.Storage;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BookmarksBase.Storage
 {
     public class BookmarksBaseStorageService : IDisposable
     {
-        const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
+        // Publics
+        public IList<Bookmark> LoadedBookmarks { get; private set; }
         public DateTime LastModifiedOn { get; }
-        readonly IDictionary<long, string> _cache;
+
+        // Privates
         readonly object _lock;
-
-        public enum OperationMode
-        {
-            Writing,
-            Reading
-        }
-
-        private OperationMode _operationMode;
-
-        readonly SQLiteConnection _sqliteCon;
-        bool disposedValue = false;
+        readonly SQLiteConnection _sqliteConn;
+        readonly ConcurrentBag<SQLiteCommand> _sqlLiteReadingCommandsPool;
+        readonly Regex _deleteEmptyLinesRegex;
+        readonly OperationMode _operationMode;
+        const int DEFAULT_CONTEXT_LENGTH = 80;
+        const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
+        bool disposedValue;
 
         public BookmarksBaseStorageService(OperationMode op, string databaseFileName = null)
         {
@@ -33,17 +36,17 @@ namespace BookmarksBase.Storage
 
             if (op == OperationMode.Reading)
             {
+                _sqlLiteReadingCommandsPool = new ConcurrentBag<SQLiteCommand>();
                 LastModifiedOn = File.GetLastWriteTime(databaseFileName);
-                _cache = new ConcurrentDictionary<long, string>();
-                _sqliteCon = new SQLiteConnection($"Data Source={databaseFileName}; Read Only = True;");
-                _sqliteCon.Open();
+                _sqliteConn = new SQLiteConnection($"Data Source={databaseFileName}; Read Only = True;");
+                _sqliteConn.Open();
 
-                // Rely on own cache of SiteContents. Don't cache any pages in sqlite
-                const string dbPreparationSQL = "PRAGMA cache_size=0";
-                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
-                {
-                    dnPreparationCommand.ExecuteNonQuery();
-                }
+                const string dbPreparationSQL = "PRAGMA cache_size=5000";
+                var cmd = GetReadingCommandFromPool();
+                cmd.CommandText = dbPreparationSQL;
+                cmd.ExecuteNonQuery();
+                PutReadingCommandToPool(cmd);
+                LoadBookmarksBase();
             }
             else
             {
@@ -52,20 +55,23 @@ namespace BookmarksBase.Storage
                 {
                     SQLiteConnection.CreateFile(databaseFileName);
                 }
-                _sqliteCon = new SQLiteConnection($"Data Source={databaseFileName};");
-                _sqliteCon.Open();
+                _sqliteConn = new SQLiteConnection($"Data Source={databaseFileName};");
+                _sqliteConn.Open();
             }
 
             _operationMode = op;
 
+            _deleteEmptyLinesRegex = new Regex(@"^\s*$[\r\n]*", RegexOptions.Compiled | RegexOptions.Multiline);
+
         }
 
-        public IList<Bookmark> LoadBookmarksBase()
+        void LoadBookmarksBase()
         {
             const string selectSQL = "select Url, Title, DateAdded, SiteContentsId from Bookmark;";
             var ret = new List<Bookmark>(2000);
-            using (var selectCommand = new SQLiteCommand(selectSQL, _sqliteCon))
-            using (var dataReader = selectCommand.ExecuteReader())
+            var cmd = GetReadingCommandFromPool();
+            cmd.CommandText = selectSQL;
+            using (var dataReader = cmd.ExecuteReader())
             {
                 while(dataReader.Read())
                 {
@@ -80,13 +86,14 @@ namespace BookmarksBase.Storage
                     );
                 }
             }
-            return ret;
+            PutReadingCommandToPool(cmd);
+            LoadedBookmarks = ret;
         }
 
         public void SaveBookmarksBase(IEnumerable<Bookmark> list)
         {
             const string insertSQL = "insert into Bookmark (Url, DateAdded, SiteContentsId, Title) values (@p0, @p1, @p2, @p3);";
-            using (var insertCommand = new SQLiteCommand(insertSQL, _sqliteCon))
+            using (var insertCommand = new SQLiteCommand(insertSQL, _sqliteConn))
             {
                 foreach (var b in list)
                 {
@@ -105,7 +112,7 @@ namespace BookmarksBase.Storage
             lock (_lock)
             {
                 const string insertSQL = "insert into SiteContents (Text) values (@p0); select LAST_INSERT_ROWID();";
-                using (var insertCommand = new SQLiteCommand(insertSQL, _sqliteCon))
+                using (var insertCommand = new SQLiteCommand(insertSQL, _sqliteConn))
                 {
                     insertCommand.Parameters.Add(new SQLiteParameter("@p0", contents));
                     using (var dataReader = insertCommand.ExecuteReader())
@@ -120,28 +127,23 @@ namespace BookmarksBase.Storage
         public string LoadContents(long siteContentsId)
         {
             string ret = null;
-            if (_cache.TryGetValue(siteContentsId, out ret))
-            {
-                return ret;
-            }
-
-            var selectSQL = $"select Text from SiteContents where Id = {siteContentsId};";
-            using (var selectCommand = new SQLiteCommand(selectSQL, _sqliteCon))
-            using (var dataReader = selectCommand.ExecuteReader())
+            var cmd = GetReadingCommandFromPool();
+            cmd.CommandText = $"select Text from SiteContents where Id = {siteContentsId};";
+            using (var dataReader = cmd.ExecuteReader())
             {
                 if (dataReader.Read())
                 {
                     ret = dataReader.GetString(0);
-                    _cache[siteContentsId] = ret;
                 }
             }
+            PutReadingCommandToPool(cmd);
             return ret;
         }
 
         public void Commit()
         {
             const string vacuumSQL = "commit; vacuum; pragma optimize;";
-            using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteCon))
+            using (var vacuumCommand = new SQLiteCommand(vacuumSQL, _sqliteConn))
             {
                 vacuumCommand.ExecuteNonQuery();
             }
@@ -176,12 +178,133 @@ PRAGMA cache_size = 0;
 BEGIN TRANSACTION;
 ";
 
-                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteCon))
+                using (var dnPreparationCommand = new SQLiteCommand(dbPreparationSQL, _sqliteConn))
                 {
                     dnPreparationCommand.ExecuteNonQuery();
                 }
 
             }
+        }
+
+        public IEnumerable<BookmarkSearchResult> DoSearch(string pattern)
+        {
+            if (
+                pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", StringComparison.CurrentCulture)
+                || string.IsNullOrEmpty(pattern)
+            )
+            {
+                return LoadedBookmarks.Select(
+                    b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId)
+                );
+            }
+            bool inurl = false, caseSensitive = false, intitle = false;
+
+            pattern = SanitizePattern(pattern);
+
+            if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("inurl:", StringComparison.CurrentCulture))
+            {
+                inurl = true;
+                pattern = pattern.Substring(6);
+            }
+            else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("casesens:", StringComparison.CurrentCulture))
+            {
+                caseSensitive = true;
+                pattern = pattern.Substring(9);
+            }
+            else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("intitle:", StringComparison.CurrentCulture))
+            {
+                intitle = true;
+                pattern = pattern.Substring(8);
+            }
+
+            Regex regex = null;
+
+            try
+            {
+                regex = new Regex(
+                    pattern,
+                    RegexOptions.Compiled | (!caseSensitive ? RegexOptions.IgnoreCase : 0) | RegexOptions.Singleline
+                );
+            }
+            catch (Exception e)
+            {
+                var ex = new RegExException(e.Message, e);
+                throw ex;
+            }
+
+            var result = new ConcurrentBag<BookmarkSearchResult>();
+            Parallel.ForEach(LoadedBookmarks, b =>
+            {
+                var match = regex.Match(inurl ? b.Url : (intitle ? b.Title : b.Url + b.Title));
+                if (match.Success)
+                {
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId));
+                }
+                else if (!inurl && !intitle && b.SiteContentsId != 0)
+                {
+                    var content = LoadContents(b.SiteContentsId);
+                    match = regex.Match(content);
+                    if (match.Success)
+                    {
+                        var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId);
+
+                        int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
+                        if (excerptStart < 0)
+                        {
+                            excerptStart = 0;
+                        }
+
+                        int excerptEnd = match.Index + DEFAULT_CONTEXT_LENGTH;
+                        if (excerptEnd > content.Length - 1)
+                        {
+                            excerptEnd = content.Length - 1;
+                        }
+
+                        item.ContentExcerpt = content.Substring(excerptStart, excerptEnd - excerptStart);
+                        item.ContentExcerpt = _deleteEmptyLinesRegex.Replace(item.ContentExcerpt, string.Empty);
+                        result.Add(item);
+                    }
+                }
+            });
+            return result;
+        }
+
+        SQLiteCommand GetReadingCommandFromPool()
+        {
+            if (_sqlLiteReadingCommandsPool.TryTake(out SQLiteCommand c))
+            {
+                return c;
+            }
+            return new SQLiteCommand(_sqliteConn);
+        }
+
+        void PutReadingCommandToPool(SQLiteCommand c)
+        {
+            _sqlLiteReadingCommandsPool.Add(c);
+        }
+
+        string SanitizePattern(string pattern)
+        {
+            pattern = pattern.Replace("++", @"\+\+");
+            pattern = pattern.Replace("**", @"\*\*");
+            pattern = pattern.Replace("$$", @"\$\$");
+            pattern = pattern.Replace("##", @"\#\#");
+            pattern = pattern.Replace(" ", @"\s+");
+            return pattern;
+        }
+
+        public class RegExException : Exception
+        {
+            public RegExException(string msg, Exception ie) : base(msg, ie)
+            {
+
+            }
+        }
+
+        public enum OperationMode
+        {
+            Writing,
+            Reading
         }
 
         #region IDisposable Support
@@ -197,7 +320,14 @@ BEGIN TRANSACTION;
             {
                 if (disposing)
                 {
-                    _sqliteCon.Dispose();
+                    _sqliteConn.Dispose();
+                    if (_sqlLiteReadingCommandsPool != null)
+                    {
+                        foreach (var c in _sqlLiteReadingCommandsPool)
+                        {
+                            c.Dispose();
+                        }
+                    }
                 }
 
                 disposedValue = true;

@@ -104,10 +104,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BookmarksBase.Search.Engine\BookmarksBase.Search.Engine.csproj">
-      <Project>{0a46b9b1-1f73-4502-bce6-211f2470f289}</Project>
-      <Name>BookmarksBase.Search.Engine</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BookmarksBase.Storage\BookmarksBase.Storage.csproj">
       <Project>{d1f00331-affa-4eb0-8dee-eca282bcae0f}</Project>
       <Name>BookmarksBase.Storage</Name>

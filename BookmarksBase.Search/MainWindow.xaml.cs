@@ -6,7 +6,6 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using BookmarksBase.Search.Engine;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Windows.Data;
@@ -24,8 +23,6 @@ namespace BookmarksBase.Search
     public partial class MainWindow : Window
     {
         SearchIconAdorner _searchIconAdorner;
-        BookmarksBaseSearchEngine _bookmarksEngine;
-        IList<Bookmark> _bookmarks;
         BookmarksBaseStorageService _storage;
 
         ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
@@ -60,10 +57,10 @@ namespace BookmarksBase.Search
                     _storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Reading);
                 }
 
-                _bookmarksEngine = new BookmarksBaseSearchEngine(_storage);
-
-                _bookmarks = _storage.LoadBookmarksBase();
-                DisplayStatus(_storage.LastModifiedOn.ToString(), _bookmarks.Count, _bookmarks.Count(b => b.SiteContentsId == 0));
+                DisplayStatus(
+                    _storage.LastModifiedOn.ToString(),
+                    _storage.LoadedBookmarks.Count
+                );
             }
             catch (Exception e)
             {
@@ -120,19 +117,12 @@ namespace BookmarksBase.Search
             SetValue(DisplayHelp, false);
         }
 
-        void DisplayStatus(string creationDate, int count, int erroneous)
+        void DisplayStatus(string creationDate, int count)
         {
             var myself = System.Reflection.Assembly.GetExecutingAssembly();
             var fvi = FileVersionInfo.GetVersionInfo(myself.Location);
             string status = null;
-            if (erroneous == 0)
-            {
-                status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
-            }
-            else
-            {
-                status = $"Loaded {count} bookmarks ({erroneous} warnings), created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
-            }
+            status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
             StatusTxt.Text = status;
         }
 
@@ -181,6 +171,14 @@ namespace BookmarksBase.Search
             }
         }
 
+        private void MenuItem_ShowContents_Click(object sender, RoutedEventArgs e)
+        {
+            if (UrlLst.SelectedItem is BookmarkSearchResult b && b.SiteContentsId.HasValue)
+            {
+               b.ContentExcerpt = _storage.LoadContents(b.SiteContentsId.Value);
+            }
+        }
+
         public async Task DoSearch()
         {
 
@@ -216,8 +214,8 @@ namespace BookmarksBase.Search
 
                 var result = await Task.Run(() =>
                 {
-                    return _bookmarksEngine
-                       .DoSearch(_bookmarks, textToSearch)
+                    return _storage
+                       .DoSearch(textToSearch)
                        .OrderByDescending(b => b.DateAdded)
                        ;
                 });
@@ -229,7 +227,7 @@ namespace BookmarksBase.Search
                     ExcerptTxt.Text = "No results";
                 }
             }
-            catch (BookmarksBaseSearchEngine.RegExException ree)
+            catch (BookmarksBaseStorageService.RegExException ree)
             {
                 MessageBox.Show(
                     "Cannot create regular expression from given pattern. " + ree.InnerException.Message,
@@ -272,6 +270,7 @@ namespace BookmarksBase.Search
                 _storage.Dispose();
             }
         }
+
     }
 
     #region Adorner

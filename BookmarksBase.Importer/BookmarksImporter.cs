@@ -22,7 +22,7 @@ namespace BookmarksBase.Importer
         readonly ConcurrentBag<BookmarksBaseWebClient> _webClientPool;
         readonly BookmarksBaseStorageService _storage;
 
-        private BookmarksBaseWebClient GetWebClientFromPool()
+        BookmarksBaseWebClient GetWebClientFromPool()
         {
             if (_webClientPool.TryTake(out BookmarksBaseWebClient wc))
             {
@@ -31,7 +31,7 @@ namespace BookmarksBase.Importer
             return new BookmarksBaseWebClient(_options);
         }
 
-        private void PutWebClientToPool(BookmarksBaseWebClient wc)
+        void PutWebClientToPool(BookmarksBaseWebClient wc)
         {
             _webClientPool.Add(wc);
         }
