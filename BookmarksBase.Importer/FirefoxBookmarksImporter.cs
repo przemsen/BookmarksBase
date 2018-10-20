@@ -46,6 +46,7 @@ namespace BookmarksBase.Importer
                         {
                             Url = url,
                             Title = rdr.GetString(rdr.GetOrdinal("title")),
+                            ParentTitle = rdr.GetString(rdr.GetOrdinal("parentTitle"))
                         };
                         if (dateAdded > 0)
                         {
@@ -95,6 +96,7 @@ namespace BookmarksBase.Importer
             public const string SQLForGetBookmarksWithUrl = @"
 SELECT
     b.[title],
+    _b.[title] as parentTitle,
     p.[url],
     (
         (CASE 
@@ -105,6 +107,7 @@ SELECT
     ) AS dateAdded
 FROM [moz_places] p
 JOIN [moz_bookmarks] b ON p.[id] = b.[fk]
+JOIN [moz_bookmarks] _b ON b.parent = _b.id
 WHERE (b.[title] IS NOT NULL) AND (p.[url] LIKE 'http://%' OR p.[url] LIKE 'https://%')
 ;";
 

@@ -24,7 +24,8 @@ namespace BookmarksBase.Importer
             var sb = new StringBuilder();
             foreach(var b in _bookmarks)
             {
-                sb.AppendLine($"<tr><td>{b.Title}</td><td><a href=\"{b.Url}\">{b.Url}</a></td><td>{b.DateAdded:yyyy-MM-dd HH:mm:ss}</td></tr>");
+                sb.AppendLine(
+                    $"<tr><td>{b.Title}</td> <td><a href=\"{b.Url}\">{b.Url}</a></td> <td>{b.DateAdded:yyyy-MM-dd HH:mm:ss}</td> <td>{b.ParentTitle}</td> </tr>");
             }
             var htmlBookmarksContent = sb.ToString();
             var completeBookmarksHtml = template.Replace("**CONTENT**", htmlBookmarksContent);

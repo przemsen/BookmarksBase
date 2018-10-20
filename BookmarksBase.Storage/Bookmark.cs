@@ -6,6 +6,7 @@ namespace BookmarksBase.Storage
     {
         public string Url { get; set; }
         public string Title { get; set; }
+        public string ParentTitle { get; set; }
         public DateTime DateAdded { get; set; }
         public long SiteContentsId { get; set; }
     }

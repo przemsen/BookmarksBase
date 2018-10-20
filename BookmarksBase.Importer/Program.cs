@@ -100,19 +100,22 @@ namespace BookmarksBase.Importer
                 {
                      DateAdded = DateTime.Now,
                      Title = "WP.pl",
-                     Url = "https://wp.pl"
+                     Url = "https://wp.pl",
+                     ParentTitle = "Folder"
                 },
                 new Bookmark
                 {
                      DateAdded = DateTime.Now,
                      Title = "ONET.pl",
-                     Url = "https://onet.pl"
+                     Url = "https://onet.pl",
+                     ParentTitle = "Folder"
                 },
                 new Bookmark
                 {
                      DateAdded = DateTime.Now,
                      Title = "o2.pl",
-                     Url = "https://o2.pl"
+                     Url = "https://o2.pl",
+                     ParentTitle = "Folder"
                 }
             };
             return ret;
