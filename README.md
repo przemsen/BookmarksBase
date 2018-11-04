@@ -30,8 +30,8 @@ In application package you get:
 # 2. Source code structure #
 
 - `BookmarksBase.Search` &mdash; WPF application to perform searches
-- `BookmarksBase.Engine` &mdash; DLL library containing actual . It is shared between both `Search` applications
 - `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages
+- `BookmarksBase.Exporter` &mdash; Command line utility to export boomarks from SQLite database into MS SQL database
 - `BookmarksBase.Storage` &mdash; DLL library with the implementation of the search as well as i/o with database file
 
 # 3. Release notes #
