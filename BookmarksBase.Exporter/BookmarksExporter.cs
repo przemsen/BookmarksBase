@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace BookmarksBase.Exporter
                 _sqlOutConn.Open();
 
                 _sqlOutCmd.ExecuteNonQuery();
-                Console.WriteLine("Target table truncated");
+                Trace.WriteLine("Target table truncated");
                 _sqlOutCmd.CommandText = INSERT_SQL_4;
 
                 var buffer = new List<Bookmark>();
@@ -62,7 +63,7 @@ namespace BookmarksBase.Exporter
                             AddBookmarkAsSqlParams(_sqlOutCmd.Parameters, buffer, 3);
                             _sqlOutCmd.ExecuteNonQuery();
                             buffer.Clear();
-                            Console.WriteLine($"Exported next 4 records ({i})");
+                            Trace.WriteLine($"Exported next 4 records ({i})");
                         }
                         ++i;
                     }
@@ -85,13 +86,13 @@ namespace BookmarksBase.Exporter
                         }
 
                         _sqlOutCmd.ExecuteNonQuery();
-                        Console.WriteLine($"Exported remainder of {buffer.Count} records");
+                        Trace.WriteLine($"Exported remainder of {buffer.Count} records");
                     }
                 }
 
                 _sqliteInConn.Close();
                 _sqlOutConn.Close();
-                Console.WriteLine("Finished");
+                Trace.WriteLine("Finished");
             }
         }
 

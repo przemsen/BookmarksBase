@@ -1,39 +1,36 @@
-﻿--set statistics time on
-declare @searchString nvarchar(100) = N'c%myip';
-declare @searchPattern nvarchar(100) = N'%' + @searchString + N'%';
-declare @excerptLength int = 120;
-declare @placeholder nvarchar(max) = N'';
-
-select 
-    DateAdded
-    ,Url
+﻿CREATE PROCEDURE [dbo].[Search] @searchString nvarchar(100)
+as
+select top 100
+    Url
+    ,DateAdded
     ,Title
     ,( 
-        case when patindex(@searchPattern, Title) > 0 then
-            @placeholder
+        case when patindex(@searchString, Title) > 0 then
+            N''
         else
         substring(
-            SiteContents, 
-            case 
+            SiteContents,
+            case
                 when
-                    patindex(@searchPattern, SiteContents) - @excerptLength > 0 
-                then 
-                    patindex(@searchPattern, SiteContents) - @excerptLength 
+                    patindex(@searchString, SiteContents) - 120 > 0 
+                then
+                    patindex(@searchString, SiteContents) - 120 
                 else 
                     0 
                 end,
             case 
                 when 
-                    (len(@searchPattern) + (2 * @excerptLength)) > len(SiteContents)
+                    (len(@searchString) + (2 * 120)) > len(SiteContents)
                 then 
                     len(SiteContents)
                 else
-                    (len(@searchPattern) + (2 * @excerptLength))
+                    (len(@searchString) + (2 * 120))
                 end
-        )        
+        )
         end
      ) e
 from dbo.Bookmark 
 where 
-    patindex(@searchPattern, Title) > 0 or patindex(@searchPattern, SiteContents) > 0
-order by DateAdded desc
+    patindex(@searchString, Title) > 0 or patindex(@searchString, SiteContents) > 0
+order by DateAdded desc;
+
