@@ -32,5 +32,15 @@ select top 100
 from dbo.Bookmark 
 where 
     patindex(@searchString, Title) > 0 or patindex(@searchString, SiteContents) > 0
-order by DateAdded desc;
-
+union
+select 
+    Url, 
+    DateAdded, 
+    N'', 
+    SiteContents 
+from Bookmark 
+where 
+    DateAdded = '1900-01-01' and 
+    Url = N'080b8253-307d-430a-bcca-9abea46e093a'
+order by DateAdded desc
+;

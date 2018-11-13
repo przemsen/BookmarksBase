@@ -38,10 +38,10 @@ namespace BookmarksBase.Exporter
                 _sqlOutCmd.CommandText = INSERT_SQL_4;
 
                 var buffer = new List<Bookmark>();
+                int counter = 0;
 
                 using (var dataReader = _sqliteInCmd.ExecuteReader())
                 {
-                    int i = 0;
                     while (dataReader.Read())
                     {
                         _sqlOutCmd.Parameters.Clear();
@@ -63,16 +63,16 @@ namespace BookmarksBase.Exporter
                             AddBookmarkAsSqlParams(_sqlOutCmd.Parameters, buffer, 3);
                             _sqlOutCmd.ExecuteNonQuery();
                             buffer.Clear();
-                            Trace.WriteLine($"Exported next 4 records ({i})");
+                            Trace.WriteLine($"Exported next 4 records ({counter})");
                         }
-                        ++i;
+                        ++counter;
                     }
 
                     _sqlOutCmd.Parameters.Clear();
 
                     if (buffer.Count > 0)
                     {
-                        for (i = 0; i < buffer.Count; ++i)
+                        for (int i = 0; i < buffer.Count; ++i)
                         {
                             AddBookmarkAsSqlParams(_sqlOutCmd.Parameters, buffer, i);
                         }
@@ -91,6 +91,15 @@ namespace BookmarksBase.Exporter
                 }
 
                 _sqliteInConn.Close();
+
+                _sqlOutCmd.CommandText = INSERT_METADATA_SENTINEL_SQL;
+                _sqlOutCmd.Parameters.Clear();
+                _sqlOutCmd.Parameters.Add("@p0", SqlDbType.DateTime).Value = new DateTime(1900, 1, 1);
+                _sqlOutCmd.Parameters.Add("@p1", SqlDbType.NVarChar).Value = METADATA_SENTINEL_TITLE;
+                _sqlOutCmd.Parameters.Add("@p2", SqlDbType.NVarChar).Value = METADATA_SENTINEL_URL;
+                _sqlOutCmd.Parameters.Add("@p3", SqlDbType.NVarChar).Value = $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm")}, {counter}";
+                _sqlOutCmd.ExecuteNonQuery();
+
                 _sqlOutConn.Close();
                 Trace.WriteLine("Finished");
             }
@@ -132,6 +141,16 @@ insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p4, @p5, @p6
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p8, @p9, @p10, @p11);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p12, @p13, @p14, @p15);
 ";
+        const string INSERT_METADATA_SENTINEL_SQL = @"
+insert into [dbo].[Bookmark] 
+    (DateAdded, Title, Url, SiteContents) 
+values 
+    (@p0, @p1, @p2, @p3);
+";
+
+        const string METADATA_SENTINEL_TITLE = "Metadata sentinel: export date, number of bookmarks";
+
+        const string METADATA_SENTINEL_URL = "080b8253-307d-430a-bcca-9abea46e093a";
 
         #endregion
 
