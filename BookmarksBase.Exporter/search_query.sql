@@ -31,7 +31,8 @@ select top 100
      ) e
 from dbo.Bookmark 
 where 
-    patindex(@searchString, Title) > 0 or patindex(@searchString, SiteContents) > 0
+    patindex(@searchString, Title) > 0 or patindex(@searchString, SiteContents) > 0 and
+    Url <> N'080b8253-307d-430a-bcca-9abea46e093a'
 union
 select 
     Url, 
