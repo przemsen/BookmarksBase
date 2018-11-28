@@ -1,40 +1,27 @@
 ﻿using BookmarksBase.Storage;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace BookmarksBase.Importer
 {
     public abstract class BookmarksImporter
     {
+        struct TaskBookmarkPair
+        {
+            public Bookmark Bookmark;
+            public Task<long> Task;
+        }
+
         readonly Options _options;
         readonly object _lck;
         readonly List<string> _errLog;
-        readonly ConcurrentBag<BookmarksBaseWebClient> _webClientPool;
         readonly BookmarksBaseStorageService _storage;
-
-        BookmarksBaseWebClient GetWebClientFromPool()
-        {
-            if (_webClientPool.TryTake(out BookmarksBaseWebClient wc))
-            {
-                return wc;
-            }
-            return new BookmarksBaseWebClient(_options);
-        }
-
-        void PutWebClientToPool(BookmarksBaseWebClient wc)
-        {
-            _webClientPool.Add(wc);
-        }
 
         public abstract IEnumerable<Bookmark> GetBookmarks();
         protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
@@ -46,7 +33,6 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
-            _webClientPool = new ConcurrentBag<BookmarksBaseWebClient>();
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Ssl3 |
@@ -59,100 +45,126 @@ namespace BookmarksBase.Importer
             _storage = storage;
         }
 
-        public long Lynx(string url)
+        public async Task<long> Lynx(string url)
         {
             byte[] rawData = null;
             long ret = 0;
+            BookmarksBaseWebClient webClient = null;
 
-            try
+            for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
-                var webClient = GetWebClientFromPool();
-                rawData = webClient.DownloadData(url);
-
-                Trace.WriteLine($"OK: {url} <br />");
-                if
-                (
-                    webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
-                    !webClient.ResponseHeaders["Content-Type"].ToString().Contains("text/") &&
-                    !webClient.ResponseHeaders["Content-Type"].ToString().Contains("/xhtml")
-                )
-                {
-                    PutWebClientToPool(webClient);
-                    return _storage.SaveContents("Not text content type");
-                }
-                PutWebClientToPool(webClient);
-
-                var tempFileName = $"{Guid.NewGuid()}.htm";
-                File.WriteAllBytes(tempFileName, rawData);
-                using (Process lynx = new Process())
-                {
-                    var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-                    lynx.StartInfo.WorkingDirectory = currentDir;
-                    lynx.StartInfo.FileName = Path.Combine(currentDir, BookmarksImporterConstants.LynxCommand);
-                    lynx.StartInfo.Arguments = BookmarksImporterConstants.LynxCommandLineOptions + tempFileName;
-                    lynx.StartInfo.UseShellExecute = false;
-                    lynx.StartInfo.RedirectStandardOutput = true;
-                    lynx.StartInfo.RedirectStandardError = true;
-                    lynx.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                    lynx.Start();
-                    var content = lynx.StandardOutput.ReadToEnd();
-                    ret = _storage.SaveContents(content);
-                    lynx.WaitForExit(BookmarksImporterConstants.WaitTimeoutForLynxProcess);
-                }
-                File.Delete(tempFileName);
-            }
-            catch (WebException we)
-            {
-                lock (_lck)
-                {
-                    if (we.Status == WebExceptionStatus.ProtocolError)
-                    {
-                        _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> {((HttpWebResponse)we.Response).StatusCode.ToString()}<br />");
-                    }
-                    else
-                    {
-                        _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> {we.Status.ToString()}<br />");
-                    }
-                }
-
+                if (i > 0) await Task.Delay(2000);
                 try
                 {
-                    ret = _storage.SaveContents($"Error: {we.Status.ToString()}");
+                    webClient = new BookmarksBaseWebClient(_options);
+                    rawData = await webClient.DownloadDataTaskAsync(url);
+
+                    Trace.WriteLine($"OK: {url} <br />");
+                    if
+                    (
+                        webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
+                        !webClient.ResponseHeaders["Content-Type"].Contains("text/") &&
+                        !webClient.ResponseHeaders["Content-Type"].Contains("/xhtml")
+                    )
+                    {
+                        return _storage.SaveContents("Not text content type");
+                    }
+
+                    var tempFileName = $"{Guid.NewGuid()}.htm";
+                    File.WriteAllBytes(tempFileName, rawData);
+                    using (Process lynx = new Process())
+                    {
+                        var currentDir = AppDomain.CurrentDomain.BaseDirectory;
+                        lynx.StartInfo.WorkingDirectory = currentDir;
+                        lynx.StartInfo.FileName = Path.Combine(currentDir, BookmarksImporterConstants.LynxCommand);
+                        lynx.StartInfo.Arguments = BookmarksImporterConstants.LynxCommandLineOptions + tempFileName;
+                        lynx.StartInfo.UseShellExecute = false;
+                        lynx.StartInfo.RedirectStandardOutput = true;
+                        lynx.StartInfo.RedirectStandardError = true;
+                        lynx.StartInfo.StandardOutputEncoding = Encoding.UTF8;
+                        lynx.Start();
+                        var content = lynx.StandardOutput.ReadToEnd();
+                        ret = _storage.SaveContents(content);
+                        lynx.WaitForExit(BookmarksImporterConstants.WaitTimeoutForLynxProcess);
+                    }
+                    File.Delete(tempFileName);
+                    break;
                 }
-                catch { }
-            }
-            catch (Exception e)
-            {
-                lock (_lck)
+                catch (WebException we)
                 {
-                    _errLog.Add(e.ToString());
+                    lock (_lck)
+                    {
+                        if (we.Status == WebExceptionStatus.ProtocolError)
+                        {
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {((HttpWebResponse)we.Response).StatusCode.ToString()} <br />");
+                        }
+                        else if (we.Status == WebExceptionStatus.ConnectFailure)
+                        {
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
+                        }
+                        else
+                        {
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) {we.Status.ToString()} <br />");
+                        }
+                    }
+
+                    if (i < BookmarksImporterConstants.RetryCount - 1)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        ret = _storage.SaveContents($"Error: {we.Status.ToString()}");
+                    }
+                    catch { ; }
                 }
+                catch (Exception e)
+                {
+                    lock (_lck)
+                    {
+                        _errLog.Add(e.ToString());
+                    }
+                }
+                finally
+                {
+                    webClient.Dispose();
+                }
+
             }
             return ret;
         }
 
         public void LoadContents(IEnumerable<Bookmark> list)
         {
-            Parallel.ForEach(
-                list,
-                b =>
+            var tasks = new List<Task<long>>();
+            var taskBookmarkPairs = new List<TaskBookmarkPair>();
+
+            foreach (var b in list)
+            {
+                var task = Lynx(b.Url);
+                tasks.Add(task);
+                taskBookmarkPairs.Add(new TaskBookmarkPair { Bookmark = b, Task = task });
+            }
+
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+            foreach (var tb in taskBookmarkPairs)
+            {
+                if (tb.Task.Result == 0)
                 {
-                    var siteContetsId = Lynx(b.Url);
-                    if (siteContetsId == 0)
-                    {
-                        b.Title += " (erroneous)";
-                    }
-                    else
-                    {
-                        b.SiteContentsId = siteContetsId;
-                    }
+                    tb.Bookmark.Title += " (erroneous)";
                 }
-            );
+                else
+                {
+                    tb.Bookmark.SiteContentsId = tb.Task.Result;
+                }
+            }
+
             if (_errLog.Any())
             {
-                _errLog.ForEach(e => { Trace.WriteLine(e); });
+                 _errLog.ForEach(e => { Trace.WriteLine(e); });
                 Trace.WriteLine(_errLog.Count + " errors. ");
-                _errLog.Clear();
             }
         }
 
@@ -168,8 +180,8 @@ namespace BookmarksBase.Importer
             public const string LynxCommandLineOptions = "-nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
             public const string LynxCommand = "lynx\\lynx.exe";
             public const int WaitTimeoutForLynxProcess = 1000;
+            public const int RetryCount = 3;
         }
-
 
         public class Options
         {

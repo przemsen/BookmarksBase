@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Forms;
 
 namespace BookmarksBase.Exporter
 {
@@ -20,7 +21,16 @@ namespace BookmarksBase.Exporter
                 Environment.Exit(1);
             }
             var exporter = new BookmarksExporter();
-            exporter.Run(args.Length == 1 ? args[0] : null);
+
+            try
+            {
+                exporter.Run(args.Length == 1 ? args[0] : null);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"{e.Message}, {e.StackTrace}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1);
+            }
         }
     }
 }

@@ -20,7 +20,6 @@ namespace BookmarksBase.Exporter
         SQLiteCommand _sqliteInCmd;
         public const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
 
-
         public void Run(string dbFileName)
         {
             var connectionString = ConfigurationManager.ConnectionStrings["dst"].ConnectionString;
@@ -32,10 +31,11 @@ namespace BookmarksBase.Exporter
             {
                 _sqliteInConn.Open();
                 _sqlOutConn.Open();
-
                 _sqlOutCmd.ExecuteNonQuery();
                 Trace.WriteLine("Target table truncated");
                 _sqlOutCmd.CommandText = INSERT_SQL_4;
+
+                var tran = _sqlOutConn.BeginTransaction();
 
                 var buffer = new List<Bookmark>();
                 int counter = 0;
@@ -99,6 +99,8 @@ namespace BookmarksBase.Exporter
                 _sqlOutCmd.Parameters.Add("@p2", SqlDbType.NVarChar).Value = METADATA_SENTINEL_URL;
                 _sqlOutCmd.Parameters.Add("@p3", SqlDbType.NVarChar).Value = $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm")}, {counter}";
                 _sqlOutCmd.ExecuteNonQuery();
+
+                tran.Commit();
 
                 _sqlOutConn.Close();
                 Trace.WriteLine("Finished");
