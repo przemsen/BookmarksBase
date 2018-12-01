@@ -36,6 +36,7 @@ namespace BookmarksBase.Exporter
                 _sqlOutCmd.CommandText = INSERT_SQL_4;
 
                 var tran = _sqlOutConn.BeginTransaction();
+                _sqlOutCmd.Transaction = tran;
 
                 var buffer = new List<Bookmark>();
                 int counter = 0;
