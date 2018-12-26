@@ -96,15 +96,26 @@ namespace BookmarksBase.Importer
                     {
                         if (we.Status == WebExceptionStatus.ProtocolError)
                         {
-                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {((HttpWebResponse)we.Response).StatusCode.ToString()} <br />");
+                            var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
+                            break;
                         }
-                        else if (we.Status == WebExceptionStatus.ConnectFailure)
+                        if (we.Status == WebExceptionStatus.ConnectFailure)
                         {
                             _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
                         }
                         else
                         {
-                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) {we.Status.ToString()} <br />");
+                            var status = we.Status.ToString();
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
+                            if (
+                                status == "SecureChannelFailure" ||
+                                status == "TrustFailure" ||
+                                status == "NameResolutionFailure"
+                            )
+                            {
+                                break;
+                            }
                         }
                     }
 
@@ -163,7 +174,10 @@ namespace BookmarksBase.Importer
 
             if (_errLog.Any())
             {
-                 _errLog.ForEach(e => { Trace.WriteLine(e); });
+                foreach (var _ in _errLog.OrderBy(_ => _))
+                {
+                    Trace.WriteLine(_);
+                }
                 Trace.WriteLine(_errLog.Count + " errors. ");
             }
         }

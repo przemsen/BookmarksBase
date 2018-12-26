@@ -83,11 +83,11 @@ namespace BookmarksBase.Importer
 
                 if (dontWait)
                 {
+                    Trace.WriteLine("</body></html>");
                     return;
                 }
 
                 Trace.WriteLine("Press any key to continue...");
-                Trace.WriteLine("</body></html>");
             }
             Console.ReadKey();
         }
