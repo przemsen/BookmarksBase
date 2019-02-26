@@ -42,9 +42,11 @@ namespace BookmarksBase.Importer
                 }
             }
 
-            using (var storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Writing))
+            BookmarksBaseStorageService storage = null;
+            FirefoxBookmarksImporter fbi = null;
+            try
             {
-                FirefoxBookmarksImporter fbi = null;
+                storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Writing);
                 try
                 {
                     fbi = new FirefoxBookmarksImporter(opts, storage);
@@ -88,6 +90,11 @@ namespace BookmarksBase.Importer
                 }
 
                 Trace.WriteLine("Press any key to continue...");
+            }
+            finally
+            {
+                storage?.Dispose();
+                fbi?.Dispose();
             }
             Console.ReadKey();
         }

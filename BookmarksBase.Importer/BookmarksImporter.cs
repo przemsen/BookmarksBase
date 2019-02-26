@@ -5,12 +5,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BookmarksBase.Importer
 {
-    public abstract class BookmarksImporter
+    public abstract class BookmarksImporter : IDisposable
     {
         struct TaskBookmarkPair
         {
@@ -22,6 +23,7 @@ namespace BookmarksBase.Importer
         readonly object _lck;
         readonly List<string> _errLog;
         readonly BookmarksBaseStorageService _storage;
+        readonly SHA1Managed _sha1;
 
         public abstract IEnumerable<Bookmark> GetBookmarks();
         protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
@@ -33,7 +35,7 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
-            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.Expect100Continue = false;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Ssl3 |
                 SecurityProtocolType.SystemDefault |
@@ -41,25 +43,32 @@ namespace BookmarksBase.Importer
                 SecurityProtocolType.Tls11 |
                 SecurityProtocolType.Tls
                 ;
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
+            ServicePointManager.ServerCertificateValidationCallback += (s, cert, ch, sec) => { return true; };
 
             _storage = storage;
+            _sha1 = new SHA1Managed();
         }
+        private string SHA1Hash(string stringToHash) =>
+            BitConverter.ToString(_sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToHash)));
 
         public async Task<long> Lynx(string url)
         {
             byte[] rawData = null;
             long ret = 0;
             BookmarksBaseWebClient webClient = null;
+            var urlHash = SHA1Hash(url).Substring(0, 12).Replace("-", string.Empty);
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
                 if (i > 0) await Task.Delay(2000);
                 try
                 {
+                    Trace.WriteLine($"{urlHash} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     webClient = new BookmarksBaseWebClient(_options);
-                    rawData = await webClient.DownloadDataTaskAsync(url);
+                    rawData = await webClient.DownloadDataTaskAsync(url).ConfigureAwait(false);
 
-                    Trace.WriteLine($"OK: {url} <br />");
+                    Trace.WriteLine($"{urlHash} - OK: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     if
                     (
                         webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
@@ -92,22 +101,23 @@ namespace BookmarksBase.Importer
                 }
                 catch (WebException we)
                 {
+                    Trace.WriteLine($"{urlHash} - Before lck in catch WE {url} <br />");
                     lock (_lck)
                     {
+                        Trace.WriteLine($"{urlHash} - After lck in catch WE {url} <br />");
                         if (we.Status == WebExceptionStatus.ProtocolError)
                         {
                             var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
                             _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
-                            break;
                         }
                         if (we.Status == WebExceptionStatus.ConnectFailure)
                         {
-                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
                         }
                         else
                         {
                             var status = we.Status.ToString();
-                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
+                            _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
                             if (
                                 status == "SecureChannelFailure" ||
                                 status == "TrustFailure" ||
@@ -121,6 +131,7 @@ namespace BookmarksBase.Importer
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
+                        Trace.WriteLine($"{urlHash} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                         continue;
                     }
 
@@ -128,12 +139,14 @@ namespace BookmarksBase.Importer
                     {
                         ret = _storage.SaveContents($"Error: {we.Status.ToString()}");
                     }
-                    catch { ; }
+                    catch { Trace.WriteLine($"{urlHash} - SaveContents error {url} <br />"); }
                 }
                 catch (Exception e)
                 {
+                    Trace.WriteLine($"{urlHash} - Before lck in catch e {url} <br />");
                     lock (_lck)
                     {
+                        Trace.WriteLine($"{urlHash} - After lck in catch e {url} <br />");
                         _errLog.Add(e.ToString());
                     }
                 }
@@ -151,6 +164,8 @@ namespace BookmarksBase.Importer
             var tasks = new List<Task<long>>();
             var taskBookmarkPairs = new List<TaskBookmarkPair>();
 
+            Trace.WriteLine("Entering main loop <br />");
+
             foreach (var b in list)
             {
                 var task = Lynx(b.Url);
@@ -158,7 +173,9 @@ namespace BookmarksBase.Importer
                 taskBookmarkPairs.Add(new TaskBookmarkPair { Bookmark = b, Task = task });
             }
 
+            Trace.WriteLine("Waiting for completion of all remaining downloads... <br />");
             Task.WhenAll(tasks).GetAwaiter().GetResult();
+            Trace.WriteLine("All downloads completed <br />");
 
             foreach (var tb in taskBookmarkPairs)
             {
@@ -188,6 +205,11 @@ namespace BookmarksBase.Importer
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "lynx.cfg")) &&
             File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), "libbz2.dll"))
             ;
+
+        public void Dispose()
+        {
+            _sha1.Dispose();
+        }
 
         public class BookmarksImporterConstants
         {
