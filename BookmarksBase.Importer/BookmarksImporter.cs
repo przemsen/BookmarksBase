@@ -110,7 +110,7 @@ namespace BookmarksBase.Importer
                             var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
                             _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i+1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
                         }
-                        if (we.Status == WebExceptionStatus.ConnectFailure)
+                        else if (we.Status == WebExceptionStatus.ConnectFailure)
                         {
                             _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
                         }

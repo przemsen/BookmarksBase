@@ -138,6 +138,7 @@ namespace BookmarksBase.Importer
 <head>
   <meta charset = ""utf-8"">
   <title>BookmarksBase Importer log file</title>
+  <style>body{font-family: monospace; font-size: larger;}</style>
   </head>
   <body>
 ");
