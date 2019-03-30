@@ -101,10 +101,14 @@ namespace BookmarksBase.Importer
                 }
                 catch (WebException we)
                 {
+#if DEBUG
                     Trace.WriteLine($"{urlHash} - Before lck in catch WE {url} <br />");
+#endif
                     lock (_lck)
                     {
+#if DEBUG
                         Trace.WriteLine($"{urlHash} - After lck in catch WE {url} <br />");
+#endif
                         if (we.Status == WebExceptionStatus.ProtocolError)
                         {
                             var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
@@ -143,10 +147,14 @@ namespace BookmarksBase.Importer
                 }
                 catch (Exception e)
                 {
+#if DEBUG
                     Trace.WriteLine($"{urlHash} - Before lck in catch e {url} <br />");
+#endif
                     lock (_lck)
                     {
+#if DEBUG
                         Trace.WriteLine($"{urlHash} - After lck in catch e {url} <br />");
+#endif
                         _errLog.Add(e.ToString());
                     }
                 }

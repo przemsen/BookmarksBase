@@ -8,6 +8,8 @@ Copy-Item .\BookmarksBase.Importer\bin\Release\System.Data.SQLite.dll -Destinati
 Copy-Item .\BookmarksBase.Importer\bin\Release\BookmarksBase.Importer.exe -Destination .\dist\BookmarksBase
 Copy-Item .\BookmarksBase.Importer\bin\Release\BookmarksBase.Importer.exe.config -Destination .\dist\BookmarksBase
 Copy-Item .\BookmarksBase.Importer\bin\Release\bookmarks_template.htm -Destination .\dist\BookmarksBase
+Copy-Item .\BookmarksBase.Exporter\bin\Release\BookmarksBase.Exporter.exe -Destination .\dist\BookmarksBase
+Copy-Item .\BookmarksBase.Exporter\App.config.template -Destination .\dist\BookmarksBase\BookmarksBase.Exporter.exe.config
 Copy-Item .\BookmarksBase.Storage\bin\Release\BookmarksBase.Storage.dll -Destination .\dist\BookmarksBase
 
 Copy-Item .\BookmarksBase.Importer\bin\Release\lynx -Destination .\dist\BookmarksBase -Recurse
