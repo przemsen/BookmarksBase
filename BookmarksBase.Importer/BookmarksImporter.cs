@@ -219,9 +219,9 @@ namespace BookmarksBase.Importer
             _sha1.Dispose();
         }
 
-        public class BookmarksImporterConstants
+        public static class BookmarksImporterConstants
         {
-            public const string LynxCommandLineOptions = "-nolist -nomargins -dump -nonumbers -width=80 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
+            public const string LynxCommandLineOptions = "-nolist -nomargins -dump -nonumbers -width=90 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
             public const string LynxCommand = "lynx\\lynx.exe";
             public const int WaitTimeoutForLynxProcess = 1000;
             public const int RetryCount = 3;

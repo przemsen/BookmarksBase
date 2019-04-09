@@ -100,6 +100,14 @@ namespace BookmarksBase.Search
             }
         }
 
+        private void UrlLst_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (UrlLst.SelectedItem is BookmarkSearchResult b && b.SiteContentsId.HasValue && b.ContentExcerpt == null)
+            {
+                b.ContentExcerpt = _storage.LoadContents(b.SiteContentsId.Value);
+            }
+        }
+
         async void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
@@ -168,14 +176,6 @@ namespace BookmarksBase.Search
             if (UrlLst.SelectedItem is BookmarkSearchResult b)
             {
                 Clipboard.SetText(b.Url);
-            }
-        }
-
-        private void MenuItem_ShowContents_Click(object sender, RoutedEventArgs e)
-        {
-            if (UrlLst.SelectedItem is BookmarkSearchResult b && b.SiteContentsId.HasValue)
-            {
-               b.ContentExcerpt = _storage.LoadContents(b.SiteContentsId.Value);
             }
         }
 
@@ -325,7 +325,7 @@ namespace BookmarksBase.Search
 
             var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
 
-            if (b is Border border)
+            if (b is Border)
             {
                 _border.BorderBrush = _borderBrush;
                 _border.BorderThickness = new Thickness(1);
@@ -342,7 +342,7 @@ namespace BookmarksBase.Search
 
             var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
 
-            if (b is Border border)
+            if (b is Border)
             {
                 _border.BorderBrush = _borderBrush2;
                 _border.BorderThickness = new Thickness(1);
@@ -358,8 +358,7 @@ namespace BookmarksBase.Search
                 return;
             }
 
-            var w = ((App)Application.Current).Windows[0] as MainWindow;
-            if (w != null)
+            if (Application.Current.Windows[0] is MainWindow w)
             {
                 await w.DoSearch();
             }

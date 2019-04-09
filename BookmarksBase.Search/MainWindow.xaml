@@ -3,8 +3,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="BookmarksBase Search"
-        Height="492.308"
-        Width="628.846"
+        Height="570"
+        Width="740"
         WindowStartupLocation="CenterScreen"
         Icon="icon.ico"
         IsTabStop="False"
@@ -76,7 +76,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"  />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="110"  />
+                <RowDefinition Height="210"  />
             </Grid.RowDefinitions>
 
             <ListView Grid.Row="0"
@@ -92,7 +92,9 @@
                      PreviewKeyDown="UrlLst_PreviewKeyDown"
                      Focusable="False"
                      SizeChanged="UrlLst_SizeChanged"
-                     GridViewColumnHeader.Click="UrlLst_HeaderClick" FontSize="13"
+                     GridViewColumnHeader.Click="UrlLst_HeaderClick"
+                     FontSize="13"
+                     SelectionChanged="UrlLst_SelectionChanged"
                      >
 
                 <ListView.View>
@@ -104,7 +106,6 @@
 
                 <ListView.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Show contents" Click="MenuItem_ShowContents_Click" />
                         <MenuItem Header="Copy" Click="MenuItem_Click"/>
                     </ContextMenu>
                 </ListView.ContextMenu>

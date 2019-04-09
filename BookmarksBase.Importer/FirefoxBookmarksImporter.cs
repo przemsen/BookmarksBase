@@ -25,7 +25,7 @@ namespace BookmarksBase.Importer
                 return null;
             }
             Trace.WriteLine("Firefox bookmarks file found: " + dbFile + " <br />");
-            string cs = @"Data Source=" + dbFile + ";Version=3;";
+            string cs = $"Data Source={dbFile};Version=3;";
             var list = new List<Bookmark>();
             using (SQLiteConnection con = new SQLiteConnection(cs))
             using (SQLiteCommand cmd = new SQLiteCommand(FirefoxBookmarksImporterConstants.SQLForGetBookmarksWithUrl, con))
@@ -91,7 +91,7 @@ namespace BookmarksBase.Importer
             return string.Empty;
         }
 
-        public class FirefoxBookmarksImporterConstants : BookmarksImporterConstants
+        public static class FirefoxBookmarksImporterConstants
         {
             public const string SQLForGetBookmarksWithUrl = @"
 SELECT

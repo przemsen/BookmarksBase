@@ -9,7 +9,7 @@ using BookmarksBase.Storage;
 
 namespace BookmarksBase.Importer
 {
-    class Program
+    static class Program
     {
         public const string DB_FILE_NAME = "BookmarksBase.sqlite";
 
