@@ -105,6 +105,7 @@ namespace BookmarksBase.Search
             if (UrlLst.SelectedItem is BookmarkSearchResult b && b.SiteContentsId.HasValue && b.ContentExcerpt == null)
             {
                 b.ContentExcerpt = _storage.LoadContents(b.SiteContentsId.Value);
+                ExcerptTxt.ScrollToHome();
             }
         }
 
