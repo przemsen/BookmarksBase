@@ -7,7 +7,8 @@
 # How to start? #
 
 - Download current release: **[Download link](https://github.com/przemsen/BookmarksBase/releases/latest)**
-- Run `BookmarksBase.Importer`. It reads all your bookmarks, downloads clean text from the bookmarked websites and stores in current folder as plain text files.
+- Run `BookmarksBase.Importer`. It reads all your bookmarks, downloads clean text from the bookmarked websites and stores in current folder SQLite database file.
+- Please note, that some anti-virus software may consider the importer as suspicious. It opens many connections in parallel to download web sites, which is quite unusual. I personally added whole folder to Windows Defender exceptions.
 - Enjoy using `BookmarksBase.Search.exe`. It supports regular expressions and searches in the indexed web page contents. Type `help:` to view some extra features. 
 
 ----------
@@ -31,8 +32,8 @@ In application package you get:
 
 - `BookmarksBase.Search` &mdash; WPF application to perform searches
 - `BookmarksBase.Importer` &mdash; Command line utility to import bookmarks from web browser and pull text from web pages
-- `BookmarksBase.Exporter` &mdash; Command line utility to export boomarks from SQLite database into MS SQL database
 - `BookmarksBase.Storage` &mdash; DLL library with the implementation of the search as well as i/o with database file
+- *Experimental* `BookmarksBase.Exporter` &mdash; Command line utility to export boomarks from SQLite database into MS SQL database. You probably will not neet this.
 
 # 3. Release notes #
 
