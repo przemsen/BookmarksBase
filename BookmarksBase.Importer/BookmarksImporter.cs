@@ -66,7 +66,7 @@ namespace BookmarksBase.Importer
                 {
                     Trace.WriteLine($"{urlHash} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     webClient = new BookmarksBaseWebClient(_options);
-                    rawData = await webClient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+                    rawData = await webClient.DownloadAsync(url, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
 
                     Trace.WriteLine($"{urlHash} - OK: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     if
@@ -147,15 +147,9 @@ namespace BookmarksBase.Importer
                 }
                 catch (Exception e)
                 {
-#if DEBUG
-                    Trace.WriteLine($"{urlHash} - Before lck in catch e {url} <br />");
-#endif
                     lock (_lck)
                     {
-#if DEBUG
-                        Trace.WriteLine($"{urlHash} - After lck in catch e {url} <br />");
-#endif
-                        _errLog.Add(e.ToString());
+                        _errLog.Add($"ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {e.GetType()} : {e.Message} <br />");
                     }
                 }
                 finally
@@ -201,7 +195,7 @@ namespace BookmarksBase.Importer
             {
                 foreach (var _ in _errLog.OrderBy(_ => _))
                 {
-                    Trace.WriteLine(_);
+                    Trace.WriteLine($"{_} <br />");
                 }
                 Trace.WriteLine(_errLog.Count + " errors. ");
             }

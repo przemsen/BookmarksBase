@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace BookmarksBase.Importer
 {
@@ -7,10 +8,27 @@ namespace BookmarksBase.Importer
     {
         readonly BookmarksImporter.Options _options;
         readonly CookieContainer _cookies = new CookieContainer();
+        const int TIMEOUT = 300000;
+        const int SMALL_TIMEOUT_FOR_RETRY = 5000;
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
             _options = options;
+        }
+
+        public async Task<byte[]> DownloadAsync(string url, bool smallTimeoutForRetry)
+        {
+            var timeoutTask = Task.Delay(smallTimeoutForRetry ? SMALL_TIMEOUT_FOR_RETRY : TIMEOUT);
+            var mainTask = DownloadDataTaskAsync(url);
+
+            await Task.WhenAny(timeoutTask, mainTask);
+
+            if (mainTask.Status == TaskStatus.RanToCompletion)
+            {
+                return mainTask.Result;
+            }
+
+            throw new Exception("Internal timeout exceeded");
         }
 
         protected override WebRequest GetWebRequest(Uri address)
