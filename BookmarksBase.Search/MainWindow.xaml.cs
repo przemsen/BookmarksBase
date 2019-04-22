@@ -130,8 +130,7 @@ namespace BookmarksBase.Search
         {
             var myself = System.Reflection.Assembly.GetExecutingAssembly();
             var fvi = FileVersionInfo.GetVersionInfo(myself.Location);
-            string status = null;
-            status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
+            string status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}.{fvi.FileBuildPart}";
             StatusTxt.Text = status;
         }
 

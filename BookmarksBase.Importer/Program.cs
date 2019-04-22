@@ -127,7 +127,7 @@ namespace BookmarksBase.Importer
 <head>
   <meta charset = ""utf-8"">
   <title>BookmarksBase Importer log file</title>
-  <style>body{font-family: monospace; font-size: larger;}</style>
+  <style>body{font-family: monospace; font-size: larger; width: 200vw;}</style>
   </head>
   <body>
 ");
@@ -214,7 +214,7 @@ namespace BookmarksBase.Importer
 
         public override void WriteLine(string message)
         {
-            message = Regex.Replace(message, "<.*>", string.Empty);
+            message = Regex.Replace(message, "<.*?>", string.Empty);
             base.WriteLine(message);
         }
 
