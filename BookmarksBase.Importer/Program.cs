@@ -72,9 +72,10 @@ namespace BookmarksBase.Importer
 
                 storage.Commit();
 
+                Trace.WriteLine("</body></html>");
+
                 if (dontWait)
                 {
-                    Trace.WriteLine("</body></html>");
                     return;
                 }
 
