@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -24,12 +24,12 @@ namespace BookmarksBase.Importer
 
             await Task.WhenAny(timeoutTask, mainTask);
 
-            if (mainTask.Status == TaskStatus.RanToCompletion)
+            if (timeoutTask.Status == TaskStatus.RanToCompletion && mainTask.Status != TaskStatus.RanToCompletion)
             {
-                return mainTask.Result;
+                throw new Exception("Internal timeout exceeded");
             }
 
-            throw new Exception("Internal timeout exceeded");
+            return mainTask.Result;
         }
 
         protected override WebRequest GetWebRequest(Uri address)

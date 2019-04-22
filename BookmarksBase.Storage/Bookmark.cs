@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace BookmarksBase.Storage
 {
@@ -8,7 +8,7 @@ namespace BookmarksBase.Storage
         public string Title { get; set; }
         public string ParentTitle { get; set; }
         public DateTime DateAdded { get; set; }
-        public long SiteContentsId { get; set; }
+        public long? SiteContentsId { get; set; }
     }
 
 }

@@ -1,4 +1,4 @@
-﻿using BookmarksBase.Search.Storage;
+using BookmarksBase.Search.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -81,7 +81,7 @@ namespace BookmarksBase.Storage
                             Url = dataReader.GetString(0),
                             Title = dataReader.GetString(1),
                             DateAdded = dataReader.GetDateTime(2),
-                            SiteContentsId = dataReader.GetInt64(3)
+                            SiteContentsId = dataReader.IsDBNull(3) ? (long?)null : dataReader.GetInt64(3)
                         }
                     );
                 }
@@ -124,8 +124,12 @@ namespace BookmarksBase.Storage
             }
         }
 
-        public string LoadContents(long siteContentsId)
+        public string LoadContents(long? siteContentsId)
         {
+            if (siteContentsId == null)
+            {
+                return null;
+            }
             string ret = null;
             var cmd = GetReadingCommandFromPool();
             cmd.CommandText = $"select Text from SiteContents where Id = {siteContentsId};";
@@ -164,17 +168,18 @@ CREATE TABLE IF NOT EXISTS Bookmark (
  Id INTEGER NOT NULL PRIMARY KEY,
  Url TEXT,
  Title TEXT,
- SiteContentsId INTEGER NOT NULL,
+ SiteContentsId INTEGER NULL,
  DateAdded DATETIME,
  FOREIGN KEY (SiteContentsId) REFERENCES SiteContents (Id)
 );
-
-DELETE FROM SiteContents;
+PRAGMA foreign_keys = 1;
 DELETE FROM Bookmark;
+DELETE FROM SiteContents;
 PRAGMA synchronous = 0;
 PRAGMA journal_mode = MEMORY;
 PRAGMA temp_store = MEMORY;
 PRAGMA cache_size = 0;
+
 BEGIN TRANSACTION;
 ";
 
@@ -240,7 +245,7 @@ BEGIN TRANSACTION;
                 {
                     result.Add(new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId));
                 }
-                else if (!inurl && !intitle && b.SiteContentsId != 0)
+                else if (!inurl && !intitle && b.SiteContentsId != null)
                 {
                     var content = LoadContents(b.SiteContentsId);
                     match = regex.Match(content);

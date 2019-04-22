@@ -1,4 +1,4 @@
-﻿using BookmarksBase.Storage;
+using BookmarksBase.Storage;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,7 +16,7 @@ namespace BookmarksBase.Importer
         private struct TaskBookmarkPair
         {
             public Bookmark Bookmark;
-            public Task<long> Task;
+            public Task<long?> Task;
         }
 
         private readonly Options _options;
@@ -52,10 +52,10 @@ namespace BookmarksBase.Importer
         private string SHA1Hash(string stringToHash) =>
             BitConverter.ToString(_sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToHash)));
 
-        public async Task<long> Lynx(string url)
+        public async Task<long?> Lynx(string url)
         {
             byte[] rawData = null;
-            long ret = 0;
+            long? ret = null;
             BookmarksBaseWebClient webClient = null;
             var urlHash = SHA1Hash(url).Substring(0, 12).Replace("-", string.Empty);
 
@@ -99,51 +99,59 @@ namespace BookmarksBase.Importer
                     File.Delete(tempFileName);
                     break;
                 }
-                catch (WebException we)
+                catch (AggregateException ae)
                 {
-                    lock (_lck)
+                    if (ae.InnerException is WebException we)
                     {
-                        if (we.Status == WebExceptionStatus.ProtocolError)
+                        lock (_lck)
                         {
-                            var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
-                        }
-                        else if (we.Status == WebExceptionStatus.ConnectFailure)
-                        {
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
-                        }
-                        else
-                        {
-                            var status = we.Status.ToString();
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
-                            if (
-                                status == "SecureChannelFailure" ||
-                                status == "TrustFailure" ||
-                                status == "NameResolutionFailure"
-                            )
+                            if (we.Status == WebExceptionStatus.ProtocolError)
                             {
-                                break;
+                                var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
+                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
                             }
+                            else if (we.Status == WebExceptionStatus.ConnectFailure)
+                            {
+                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
+                            }
+                            else
+                            {
+                                var status = we.Status.ToString();
+                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
+                                if (
+                                    status == "SecureChannelFailure" ||
+                                    status == "TrustFailure" ||
+                                    status == "NameResolutionFailure"
+                                )
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        lock (_lck)
+                        {
+                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {ae.GetType()} (Aggregate) : {ae.Message} <br />");
                         }
                     }
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
                         Trace.WriteLine($"{urlHash} {GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
-                        continue;
                     }
-
-                    try
-                    {
-                        ret = _storage.SaveContents($"{GetDateTime()} Error: {we.Status.ToString()}");
-                    }
-                    catch { Trace.WriteLine($"{urlHash} {GetDateTime()} - SaveContents error {url} <br />"); }
                 }
                 catch (Exception e)
                 {
                     lock (_lck)
                     {
                         _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {e.GetType()} : {e.Message} <br />");
+                    }
+
+                    if (i < BookmarksImporterConstants.RetryCount - 1)
+                    {
+                        Trace.WriteLine($"{urlHash} {GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     }
                 }
                 finally
@@ -157,7 +165,7 @@ namespace BookmarksBase.Importer
 
         public void LoadContents(IEnumerable<Bookmark> list)
         {
-            var tasks = new List<Task<long>>();
+            var tasks = new List<Task<long?>>();
             var taskBookmarkPairs = new List<TaskBookmarkPair>();
 
             Trace.WriteLine($"{GetDateTime()} Entering main loop <br />");
@@ -175,7 +183,7 @@ namespace BookmarksBase.Importer
 
             foreach (var tb in taskBookmarkPairs)
             {
-                if (tb.Task.Result == 0)
+                if (tb.Task.Result == null)
                 {
                     tb.Bookmark.Title += " (erroneous)";
                 }
@@ -189,7 +197,7 @@ namespace BookmarksBase.Importer
             {
                 foreach (var _ in _errLog.OrderBy(_ => _))
                 {
-                    Trace.WriteLine($"{_} <br />");
+                    Trace.WriteLine(_);
                 }
                 Trace.WriteLine(_errLog.Count + " errors. ");
             }
