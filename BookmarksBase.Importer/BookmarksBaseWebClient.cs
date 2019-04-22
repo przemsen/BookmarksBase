@@ -8,8 +8,9 @@ namespace BookmarksBase.Importer
     {
         readonly BookmarksImporter.Options _options;
         readonly CookieContainer _cookies = new CookieContainer();
-        const int TIMEOUT = 300000;
+        const int TIMEOUT = 90000;
         const int SMALL_TIMEOUT_FOR_RETRY = 5000;
+        public static int CustomTimeout { get; set; } = TIMEOUT;
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
@@ -18,7 +19,7 @@ namespace BookmarksBase.Importer
 
         public async Task<byte[]> DownloadAsync(string url, bool smallTimeoutForRetry)
         {
-            var timeoutTask = Task.Delay(smallTimeoutForRetry ? SMALL_TIMEOUT_FOR_RETRY : TIMEOUT);
+            var timeoutTask = Task.Delay(smallTimeoutForRetry ? SMALL_TIMEOUT_FOR_RETRY : CustomTimeout);
             var mainTask = DownloadDataTaskAsync(url);
 
             await Task.WhenAny(timeoutTask, mainTask);

@@ -18,14 +18,14 @@ namespace BookmarksBase.Storage
         public DateTime LastModifiedOn { get; }
 
         // Privates
-        readonly object _lock;
-        readonly SQLiteConnection _sqliteConn;
-        readonly ConcurrentBag<SQLiteCommand> _sqlLiteReadingCommandsPool;
-        readonly Regex _deleteEmptyLinesRegex;
-        readonly OperationMode _operationMode;
-        const int DEFAULT_CONTEXT_LENGTH = 80;
-        const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
-        bool disposedValue;
+        private readonly object _lock;
+        private readonly SQLiteConnection _sqliteConn;
+        private readonly ConcurrentBag<SQLiteCommand> _sqlLiteReadingCommandsPool;
+        private readonly Regex _deleteEmptyLinesRegex;
+        private readonly OperationMode _operationMode;
+        private const int DEFAULT_CONTEXT_LENGTH = 80;
+        private const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
+        private bool disposedValue;
 
         public BookmarksBaseStorageService(OperationMode op, string databaseFileName = null)
         {
@@ -65,7 +65,7 @@ namespace BookmarksBase.Storage
 
         }
 
-        void LoadBookmarksBase()
+        private void LoadBookmarksBase()
         {
             const string selectSQL = "select Url, Title, DateAdded, SiteContentsId from Bookmark;";
             var ret = new List<Bookmark>(2000);
@@ -73,7 +73,7 @@ namespace BookmarksBase.Storage
             cmd.CommandText = selectSQL;
             using (var dataReader = cmd.ExecuteReader())
             {
-                while(dataReader.Read())
+                while (dataReader.Read())
                 {
                     ret.Add(
                         new Bookmark
@@ -269,7 +269,7 @@ BEGIN TRANSACTION;
             return result;
         }
 
-        SQLiteCommand GetReadingCommandFromPool()
+        private SQLiteCommand GetReadingCommandFromPool()
         {
             if (_sqlLiteReadingCommandsPool.TryTake(out SQLiteCommand c))
             {
@@ -278,12 +278,12 @@ BEGIN TRANSACTION;
             return new SQLiteCommand(_sqliteConn);
         }
 
-        void PutReadingCommandToPool(SQLiteCommand c)
+        private void PutReadingCommandToPool(SQLiteCommand c)
         {
             _sqlLiteReadingCommandsPool.Add(c);
         }
 
-        string SanitizePattern(string pattern)
+        private string SanitizePattern(string pattern)
         {
             pattern = pattern.Replace("++", @"\+\+");
             pattern = pattern.Replace("**", @"\*\*");

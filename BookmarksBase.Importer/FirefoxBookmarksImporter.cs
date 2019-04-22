@@ -61,7 +61,7 @@ namespace BookmarksBase.Importer
             return list.OrderByDescending(b => b.DateAdded).ToList();
         }
 
-        string GetFirefoxBookmarksFile()
+        private string GetFirefoxBookmarksFile()
         {
             string apppath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string mozilla = Path.Combine(apppath, "Mozilla");

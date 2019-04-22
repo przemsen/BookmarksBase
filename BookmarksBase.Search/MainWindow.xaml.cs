@@ -1,19 +1,19 @@
-﻿using System;
+﻿using BookmarksBase.Storage;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.Windows.Data;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using BookmarksBase.Storage;
-using System.IO;
 
 namespace BookmarksBase.Search
 {
@@ -22,11 +22,11 @@ namespace BookmarksBase.Search
     /// </summary>
     public partial class MainWindow : Window
     {
-        SearchIconAdorner _searchIconAdorner;
-        BookmarksBaseStorageService _storage;
-
-        ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
-        ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
+        private SearchIconAdorner _searchIconAdorner;
+        private BookmarksBaseStorageService _storage;
+        private const string ERROR_LOG_FILENAME = "search.error.log.txt";
+        private ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
+        private ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
 
         public static readonly DependencyProperty DisplayHelp =
             DependencyProperty.Register(
@@ -79,7 +79,7 @@ namespace BookmarksBase.Search
             FindTxt.Focus();
         }
 
-        void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.OriginalSource is TextBlock)
             {
@@ -90,7 +90,7 @@ namespace BookmarksBase.Search
 
         }
 
-        void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
@@ -109,7 +109,7 @@ namespace BookmarksBase.Search
             }
         }
 
-        async void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
             {
@@ -117,7 +117,7 @@ namespace BookmarksBase.Search
             }
         }
 
-        void FindTxt_GotFocus(object sender, RoutedEventArgs e)
+        private void FindTxt_GotFocus(object sender, RoutedEventArgs e)
         {
             if ((bool)GetValue(DisplayHelp))
             {
@@ -126,7 +126,7 @@ namespace BookmarksBase.Search
             SetValue(DisplayHelp, false);
         }
 
-        void DisplayStatus(string creationDate, int count)
+        private void DisplayStatus(string creationDate, int count)
         {
             var myself = System.Reflection.Assembly.GetExecutingAssembly();
             var fvi = FileVersionInfo.GetVersionInfo(myself.Location);
@@ -139,13 +139,13 @@ namespace BookmarksBase.Search
         {
             if (e.WidthChanged)
             {
-                GridView view = this.UrlLst.View as GridView;
-                view.Columns[0].Width = this.Width - 130;
+                GridView view = UrlLst.View as GridView;
+                view.Columns[0].Width = Width - 130;
 
             }
         }
 
-        private void UrlLst_HeaderClick(object sender, RoutedEventArgs e )
+        private void UrlLst_HeaderClick(object sender, RoutedEventArgs e)
         {
             GridViewColumnHeader column = e.OriginalSource as GridViewColumnHeader;
             if (column == null) return;
@@ -236,10 +236,10 @@ namespace BookmarksBase.Search
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-                File.WriteAllText("error.log", ree.StackTrace);
+                File.WriteAllText(ERROR_LOG_FILENAME, ree.StackTrace);
                 if (ree.InnerException != null)
                 {
-                    File.AppendAllText("error.log", "---" + Environment.NewLine + ree.InnerException.StackTrace);
+                    File.AppendAllText(ERROR_LOG_FILENAME, "---" + Environment.NewLine + ree.InnerException.StackTrace);
                 }
             }
             catch (Exception e)
@@ -250,10 +250,10 @@ namespace BookmarksBase.Search
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-                File.WriteAllText("error.log", e.StackTrace);
+                File.WriteAllText(ERROR_LOG_FILENAME, e.StackTrace);
                 if (e.InnerException != null)
                 {
-                    File.AppendAllText("error.log", "---" + Environment.NewLine + e.InnerException.StackTrace);
+                    File.AppendAllText(ERROR_LOG_FILENAME, "---" + Environment.NewLine + e.InnerException.StackTrace);
                 }
             }
             finally
@@ -278,16 +278,15 @@ namespace BookmarksBase.Search
 
     public class SearchIconAdorner : Adorner
     {
-        readonly VisualCollection _visualCollection;
-        readonly Image _image;
-        readonly Border _border;
-        readonly SolidColorBrush _bckgrBrush;
-        readonly SolidColorBrush _borderBrush;
+        private readonly VisualCollection _visualCollection;
+        private readonly Image _image;
+        private readonly Border _border;
+        private readonly SolidColorBrush _bckgrBrush;
+        private readonly SolidColorBrush _borderBrush;
+        private readonly SolidColorBrush _bckgrBrush2;
+        private readonly SolidColorBrush _borderBrush2;
 
-        readonly SolidColorBrush _bckgrBrush2;
-        readonly SolidColorBrush _borderBrush2;
-
-        bool IsFindTxtEnabled => ((TextBox)AdornedElement).IsEnabled;
+        private bool IsFindTxtEnabled => ((TextBox)AdornedElement).IsEnabled;
 
         public SearchIconAdorner(UIElement adornedElement) : base(adornedElement)
         {
@@ -381,7 +380,7 @@ namespace BookmarksBase.Search
             double imgSize = controlHeight - 9;
             _border.Width = imgSize;
             _border.Height = imgSize;
-            _border.Arrange(new Rect(controlWidth - imgSize * 1.3, imgSize / 4 , imgSize, imgSize));
+            _border.Arrange(new Rect(controlWidth - imgSize * 1.3, imgSize / 4, imgSize, imgSize));
             return finalSize;
         }
 

@@ -5,23 +5,21 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BookmarksBase.Exporter
 {
 
     public class BookmarksExporter
     {
-        SqlConnection _sqlOutConn;
-        SqlCommand _sqlOutCmd;
-        SQLiteConnection _sqliteInConn;
-        SQLiteCommand _sqliteInCmd;
+        private SqlConnection _sqlOutConn;
+        private SqlCommand _sqlOutCmd;
+        private SQLiteConnection _sqliteInConn;
+        private SQLiteCommand _sqliteInCmd;
         public const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
 
         public void Run(string dbFileName)
         {
+            bool bookmarksAvailable = false;
             var connectionString = ConfigurationManager.ConnectionStrings["dst"].ConnectionString;
 
             using (_sqlOutConn = new SqlConnection(connectionString))
@@ -31,12 +29,12 @@ namespace BookmarksBase.Exporter
             {
                 _sqliteInConn.Open();
                 _sqlOutConn.Open();
-                _sqlOutCmd.ExecuteNonQuery();
-                Trace.WriteLine("Target table truncated");
-                _sqlOutCmd.CommandText = INSERT_SQL_4;
-
                 var tran = _sqlOutConn.BeginTransaction();
                 _sqlOutCmd.Transaction = tran;
+                _sqlOutCmd.ExecuteNonQuery();
+                Trace.WriteLine("Target table truncated");
+
+                _sqlOutCmd.CommandText = INSERT_SQL_4;
 
                 var buffer = new List<Bookmark>();
                 int counter = 0;
@@ -45,6 +43,7 @@ namespace BookmarksBase.Exporter
                 {
                     while (dataReader.Read())
                     {
+                        bookmarksAvailable = true;
                         _sqlOutCmd.Parameters.Clear();
 
                         var bookmark = new Bookmark
@@ -101,14 +100,23 @@ namespace BookmarksBase.Exporter
                 _sqlOutCmd.Parameters.Add("@p3", SqlDbType.NVarChar).Value = $"{DateTime.Now.ToString("yyyy-MM-dd HH:mm")}, {counter}";
                 _sqlOutCmd.ExecuteNonQuery();
 
-                tran.Commit();
+                if (bookmarksAvailable)
+                {
+                    tran.Commit();
+                    Trace.WriteLine("Commit");
+                }
+                else
+                {
+                    tran.Rollback();
+                    Trace.WriteLine("Rollback");
+                }
 
                 _sqlOutConn.Close();
                 Trace.WriteLine("Finished");
             }
         }
 
-        void AddBookmarkAsSqlParams(SqlParameterCollection spc, List<Bookmark> bl, int index)
+        private void AddBookmarkAsSqlParams(SqlParameterCollection spc, List<Bookmark> bl, int index)
         {
             spc.Add($"@p{4 * index}", SqlDbType.NVarChar).Value = bl[index].Url;
             spc.Add($"@p{4 * index + 1}", SqlDbType.DateTime).Value = bl[index].DateAdded;
@@ -118,42 +126,40 @@ namespace BookmarksBase.Exporter
 
         #region Constants with SQL
 
-        const string SELECT_SQL = @"
+        private const string SELECT_SQL = @"
 select b.Url, b.DateAdded, b.Title, sc.Text
 from Bookmark b
 join SiteContents sc on b.SiteContentsId = sc.Id
 order by b.DateAdded desc;
 ";
-        const string INSERT_SQL_1 = @"
+        private const string INSERT_SQL_1 = @"
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p0, @p1, @p2, @p3);
 ";
-        const string INSERT_SQL_2 = @"
+        private const string INSERT_SQL_2 = @"
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p0, @p1, @p2, @p3);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p4, @p5, @p6, @p7);
 
 ";
-        const string INSERT_SQL_3 = @"
+        private const string INSERT_SQL_3 = @"
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p0, @p1, @p2, @p3);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p4, @p5, @p6, @p7);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p8, @p9, @p10, @p11);
 
 ";
-        const string INSERT_SQL_4 = @"
+        private const string INSERT_SQL_4 = @"
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p0, @p1, @p2, @p3);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p4, @p5, @p6, @p7);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p8, @p9, @p10, @p11);
 insert into Bookmark (Url, DateAdded, Title, SiteContents) values (@p12, @p13, @p14, @p15);
 ";
-        const string INSERT_METADATA_SENTINEL_SQL = @"
+        private const string INSERT_METADATA_SENTINEL_SQL = @"
 insert into [dbo].[Bookmark] 
     (DateAdded, Title, Url, SiteContents) 
 values 
     (@p0, @p1, @p2, @p3);
 ";
-
-        const string METADATA_SENTINEL_TITLE = "Metadata sentinel: export date, number of bookmarks";
-
-        const string METADATA_SENTINEL_URL = "080b8253-307d-430a-bcca-9abea46e093a";
+        private const string METADATA_SENTINEL_TITLE = "Metadata sentinel: export date, number of bookmarks";
+        private const string METADATA_SENTINEL_URL = "080b8253-307d-430a-bcca-9abea46e093a";
 
         #endregion
 

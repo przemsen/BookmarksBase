@@ -5,12 +5,12 @@ using System.Windows.Forms;
 
 namespace BookmarksBase.Exporter
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
             var tr1 = new TextWriterTraceListener(Console.Out);
-            var tr2 = new TextWriterTraceListener(File.CreateText("log.txt"));
+            var tr2 = new TextWriterTraceListener(File.CreateText("exporter.log.txt"));
             Trace.Listeners.Add(tr1);
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;

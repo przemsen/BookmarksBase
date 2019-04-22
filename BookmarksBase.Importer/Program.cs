@@ -1,23 +1,23 @@
-﻿using System;
+using BookmarksBase.Storage;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.IO;
-using System.Diagnostics;
-using System.IO.Compression;
-using System.Collections.Generic;
-using BookmarksBase.Storage;
+using System.Text.RegularExpressions;
 
 namespace BookmarksBase.Importer
 {
-    static class Program
+    internal static class Program
     {
         public const string DB_FILE_NAME = "BookmarksBase.sqlite";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             const bool debug = false;
             var dontWait = false;
-            var preCache = dontWait;
 
             Setup();
 
@@ -28,20 +28,9 @@ namespace BookmarksBase.Importer
 
             Trace.WriteLine("Default importer: Fierfox");
 
-            var opts = new BookmarksImporter.Options();
-            if (args.Any())
-            {
-                if (args[0] == "/batch")
-                {
-                    dontWait = preCache = true;
-                }
-                else
-                {
-                    Trace.WriteLine("Unrecognized option: " + args[0]);
-                    Environment.Exit(1);
-                }
-            }
+            HandleCommandlineArgs(args, out dontWait);
 
+            var opts = new BookmarksImporter.Options();
             BookmarksBaseStorageService storage = null;
             FirefoxBookmarksImporter fbi = null;
             try
@@ -99,7 +88,7 @@ namespace BookmarksBase.Importer
             Console.ReadKey();
         }
 
-        static IEnumerable<Bookmark> GetMockData()
+        private static IEnumerable<Bookmark> GetMockData()
         {
             var ret = new List<Bookmark>
             {
@@ -128,10 +117,10 @@ namespace BookmarksBase.Importer
             return ret;
         }
 
-        static void Setup()
+        private static void Setup()
         {
-            var tr1 = new TextWriterTraceListener(Console.Out);
-            var tr2 = new TextWriterTraceListener(File.CreateText("log.htm"));
+            var tr1 = new TextWriterTraceListenerWithHtmlFiler(Console.Out);
+            var tr2 = new TextWriterTraceListener(File.CreateText("importer.log.htm"));
             tr2.Write(
 @"<!doctype html>
 <html lang=""en"">
@@ -149,7 +138,7 @@ namespace BookmarksBase.Importer
             ServicePointManager.DefaultConnectionLimit = 128;
         }
 
-        static void ArchiveExistingFiles()
+        private static void ArchiveExistingFiles()
         {
             try
             {
@@ -173,6 +162,62 @@ namespace BookmarksBase.Importer
                 Trace.WriteLine(e.Message);
             }
         }
+
+        private static void HandleCommandlineArgs(string[] args, out bool dontWait)
+        {
+            dontWait = false;
+            if (args.Length > 0)
+            {
+                foreach (var arg in args)
+                {
+                    if (string.Equals(arg, "/batch", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        dontWait = true;
+                    }
+                    else if (TryParseTimeoutFromCmdlineArg(arg, out int newTimeout))
+                    {
+                        BookmarksBaseWebClient.CustomTimeout = newTimeout;
+                    }
+                    else
+                    {
+                        Trace.WriteLine($"Unrecognized command line argument: {arg}");
+                        Environment.Exit(1);
+                    }
+                }
+            }
+
+            //_____________________________________
+
+            bool TryParseTimeoutFromCmdlineArg(string cmdLineArg, out int timeout)
+            {
+                timeout = 0;
+
+                if (cmdLineArg.StartsWith("/timeout:", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var afterSplit = cmdLineArg.Split(':');
+                    return int.TryParse(afterSplit[1], out timeout);
+                }
+
+                return false;
+            }
+
+        }
+
+    }
+
+    class TextWriterTraceListenerWithHtmlFiler : TextWriterTraceListener
+    {
+        public TextWriterTraceListenerWithHtmlFiler(TextWriter writer) : base(writer)
+        {
+
+        }
+
+        public override void WriteLine(string message)
+        {
+            message = Regex.Replace(message, "<.*>", string.Empty);
+            base.WriteLine(message);
+        }
+
     }
 
 }
