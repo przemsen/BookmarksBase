@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
@@ -16,6 +15,7 @@ namespace BookmarksBase.Importer
 
         private static void Main(string[] args)
         {
+            // This is a feature switch pattern. If set, mock urls are retrieved instead of real bookmarks
             const bool debug = false;
             var dontWait = false;
 
@@ -136,7 +136,7 @@ namespace BookmarksBase.Importer
             Trace.Listeners.Add(tr1);
             Trace.Listeners.Add(tr2);
             Trace.AutoFlush = true;
-            ServicePointManager.DefaultConnectionLimit = 128;
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
         }
 
         private static void ArchiveExistingFiles()
@@ -206,8 +206,10 @@ namespace BookmarksBase.Importer
 
     }
 
-    class TextWriterTraceListenerWithHtmlFiler : TextWriterTraceListener
+    internal class TextWriterTraceListenerWithHtmlFiler : TextWriterTraceListener
     {
+        private static readonly Regex _htmlFilterRegex = new Regex("<.*?>", RegexOptions.Compiled);
+
         public TextWriterTraceListenerWithHtmlFiler(TextWriter writer) : base(writer)
         {
 
@@ -215,7 +217,7 @@ namespace BookmarksBase.Importer
 
         public override void WriteLine(string message)
         {
-            message = Regex.Replace(message, "<.*?>", string.Empty);
+            message = _htmlFilterRegex.Replace(message, string.Empty);
             base.WriteLine(message);
         }
 
