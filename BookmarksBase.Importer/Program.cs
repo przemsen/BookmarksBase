@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Configuration;
 
 namespace BookmarksBase.Importer
 {
@@ -31,6 +32,8 @@ namespace BookmarksBase.Importer
             HandleCommandlineArgs(args, out dontWait);
 
             var opts = new BookmarksImporter.Options();
+            opts.FallbackDownloaderUrl = ConfigurationManager.AppSettings["fallbackdowloader"];
+
             BookmarksBaseStorageService storage = null;
             FirefoxBookmarksImporter fbi = null;
             try
@@ -97,23 +100,23 @@ namespace BookmarksBase.Importer
                 {
                      DateAdded = DateTime.Now,
                      Title = "WP.pl",
-                     Url = "https://wp.pl",
+                     Url = "https://gunnarpeipman.com/aspnet-core-file-uploads/",
                      ParentTitle = "Folder"
                 },
-                new Bookmark
-                {
-                     DateAdded = DateTime.Now,
-                     Title = "ONET.pl",
-                     Url = "https://onet.pl",
-                     ParentTitle = "Folder"
-                },
-                new Bookmark
-                {
-                     DateAdded = DateTime.Now,
-                     Title = "o2.pl",
-                     Url = "https://o2.pl",
-                     ParentTitle = "Folder"
-                }
+            //    new Bookmark
+            //    {
+            //         DateAdded = DateTime.Now,
+            //         Title = "ONET.pl",
+            //         Url = "https://onet.pl",
+            //         ParentTitle = "Folder"
+            //    },
+            //    new Bookmark
+            //    {
+            //         DateAdded = DateTime.Now,
+            //         Title = "o2.pl",
+            //         Url = "https://o2.pl",
+            //         ParentTitle = "Folder"
+            //    }
             };
             return ret;
         }

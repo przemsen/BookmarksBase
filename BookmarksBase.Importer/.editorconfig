@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# MA0039: Do not write your own certificate validation method
+dotnet_diagnostic.MA0039.severity = suggestion

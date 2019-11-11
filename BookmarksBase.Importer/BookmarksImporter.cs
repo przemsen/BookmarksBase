@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 namespace BookmarksBase.Importer
@@ -23,7 +24,7 @@ namespace BookmarksBase.Importer
         private readonly object _lck;
         private readonly List<string> _errLog;
         private readonly BookmarksBaseStorageService _storage;
-        private readonly SHA1Managed _sha1;
+        private readonly UrlEncoder _urlEncoder;
 
         public abstract IEnumerable<Bookmark> GetBookmarks();
         protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
@@ -35,6 +36,7 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
+            _urlEncoder = UrlEncoder.Default;
             ServicePointManager.Expect100Continue = false;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Ssl3 |
@@ -45,30 +47,35 @@ namespace BookmarksBase.Importer
                 ;
             ServicePointManager.DefaultConnectionLimit = int.MaxValue;
             ServicePointManager.ServerCertificateValidationCallback += (s, cert, ch, sec) => { return true; };
-
             _storage = storage;
-            _sha1 = new SHA1Managed();
         }
-        private string SHA1Hash(string stringToHash) =>
-            BitConverter.ToString(_sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToHash)));
 
         public async Task<long?> Lynx(string url)
         {
             byte[] rawData = null;
             long? ret = null;
             BookmarksBaseWebClient webClient = null;
-            var urlHash = SHA1Hash(url).Substring(0, 12).Replace("-", string.Empty);
+            bool useFallbackDownloaderInRetry = false;
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
-                if (i > 0) await Task.Delay(2000);
+                if (i > 0 && !useFallbackDownloaderInRetry) await Task.Delay(2000);
                 try
                 {
-                    Trace.WriteLine($"{urlHash} {GetDateTime()} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                    Trace.WriteLine($"{GetDateTime()} - Starting{(useFallbackDownloaderInRetry ? " with fallback service" : string.Empty)}: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     webClient = new BookmarksBaseWebClient(_options);
-                    rawData = await webClient.DownloadAsync(url, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
 
-                    Trace.WriteLine($"{urlHash} {GetDateTime()} - OK: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                    if (useFallbackDownloaderInRetry)
+                    {
+                        var fallbackDownloaderUrl = $"{_options.FallbackDownloaderUrl}&url={_urlEncoder.Encode(url)}";
+                        rawData = await webClient.DownloadAsync(fallbackDownloaderUrl, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        rawData = await webClient.DownloadAsync(url, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
+                    }
+
+                    Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     if
                     (
                         webClient.ResponseHeaders.AllKeys.Any(k => k == "Content-Type") &&
@@ -109,20 +116,25 @@ namespace BookmarksBase.Importer
                             {
                                 var statusCode = ((HttpWebResponse)we.Response).StatusCode.ToString();
                                 _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ProtocolError {statusCode} <br />");
+                                if (statusCode == "NotFound")
+                                {
+                                    break;
+                                }
                             }
                             else if (we.Status == WebExceptionStatus.ConnectFailure)
                             {
                                 _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) ConnectFailure <br />");
                             }
+                            else if (we.Status == WebExceptionStatus.SecureChannelFailure || we.Status == WebExceptionStatus.TrustFailure)
+                            {
+                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) SecureChannelFailure - trying fallback download helper service <br />");
+                                useFallbackDownloaderInRetry = !string.IsNullOrEmpty(_options.FallbackDownloaderUrl);
+                            }
                             else
                             {
                                 var status = we.Status.ToString();
                                 _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {status} <br />");
-                                if (
-                                    status == "SecureChannelFailure" ||
-                                    status == "TrustFailure" ||
-                                    status == "NameResolutionFailure"
-                                )
+                                if (status == "NameResolutionFailure")
                                 {
                                     break;
                                 }
@@ -139,19 +151,26 @@ namespace BookmarksBase.Importer
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
-                        Trace.WriteLine($"{urlHash} {GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                        if (useFallbackDownloaderInRetry)
+                        {
+                            Trace.WriteLine($"{GetDateTime()} - Retrying with fallback service {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                        }
+                        else
+                        {
+                            Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                        }
                     }
                 }
                 catch (Exception e)
                 {
                     lock (_lck)
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {e.GetType()} : {e.Message} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {e.GetType()}: {e.Message} <br />");
                     }
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
-                        Trace.WriteLine($"{urlHash} {GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                        Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     }
                 }
                 finally
@@ -212,7 +231,7 @@ namespace BookmarksBase.Importer
 
         public void Dispose()
         {
-            _sha1.Dispose();
+
         }
 
         public static string GetDateTime() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:fff");
@@ -227,7 +246,7 @@ namespace BookmarksBase.Importer
 
         public class Options
         {
-            public bool SockProxyFriendly { get; set; }
+            public string FallbackDownloaderUrl { get; set; }
         }
     }
 }
