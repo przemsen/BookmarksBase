@@ -16,7 +16,7 @@ Copy-Item .\BookmarksBase.Importer\bin\Release\System.Numerics.Vectors.dll -Dest
 Copy-Item .\BookmarksBase.Importer\bin\Release\System.Buffers.dll -Destination .\dist\BookmarksBase
 
 Copy-Item .\BookmarksBase.Exporter\bin\Release\BookmarksBase.Exporter.exe -Destination .\dist\BookmarksBase
-Copy-Item .\BookmarksBase.Exporter\App.config.template -Destination .\dist\BookmarksBase\BookmarksBase.Exporter.exe.config
+Copy-Item .\BookmarksBase.Exporter\bin\Release\BookmarksBase.Exporter.exe.config -Destination .\dist\BookmarksBase
 
 Copy-Item .\BookmarksBase.Storage\bin\Release\BookmarksBase.Storage.dll -Destination .\dist\BookmarksBase
 
