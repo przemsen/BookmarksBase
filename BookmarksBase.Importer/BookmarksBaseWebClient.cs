@@ -8,9 +8,10 @@ namespace BookmarksBase.Importer
     {
         readonly BookmarksImporter.Options _options;
         readonly CookieContainer _cookies = new CookieContainer();
-        const int TIMEOUT = 11000;
+        const int MY_TIMEOUT = 11000;
+        const int WEBCLIENT_TIMEOUT = 10000;
         const int SMALL_TIMEOUT_FOR_RETRY = 5000;
-        public static int CustomTimeout { get; set; } = TIMEOUT;
+        public static int CustomTimeout { get; set; } = MY_TIMEOUT;
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
@@ -22,7 +23,7 @@ namespace BookmarksBase.Importer
             var timeoutTask = Task.Delay(smallTimeoutForRetry ? SMALL_TIMEOUT_FOR_RETRY : CustomTimeout);
             var mainTask = DownloadDataTaskAsync(url);
 
-            await Task.WhenAny(timeoutTask, mainTask);
+            await Task.WhenAny(timeoutTask, mainTask).ConfigureAwait(false);
 
             if (timeoutTask.Status == TaskStatus.RanToCompletion && mainTask.Status != TaskStatus.RanToCompletion)
             {
@@ -39,7 +40,7 @@ namespace BookmarksBase.Importer
             request.ProtocolVersion = HttpVersion.Version11;
             request.MaximumAutomaticRedirections = 100;
             request.AllowAutoRedirect = true;
-            request.Timeout = 1000;
+            request.Timeout = WEBCLIENT_TIMEOUT;
             request.KeepAlive = false;
             request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0";
             request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";

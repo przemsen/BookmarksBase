@@ -1,4 +1,4 @@
-﻿using BookmarksBase.Storage;
+using BookmarksBase.Storage;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -25,7 +25,7 @@ namespace BookmarksBase.Importer
                 return null;
             }
             Trace.WriteLine("Firefox bookmarks file found: " + dbFile + " <br />");
-            string cs = $"Data Source={dbFile};Version=3;";
+            string cs = $"Data Source={dbFile};Version=3;Read Only=True;";
             var list = new List<Bookmark>();
             using (SQLiteConnection con = new SQLiteConnection(cs))
             using (SQLiteCommand cmd = new SQLiteCommand(FirefoxBookmarksImporterConstants.SQLForGetBookmarksWithUrl, con))
@@ -37,7 +37,7 @@ namespace BookmarksBase.Importer
                     {
                         var dateAdded = rdr.GetInt64(rdr.GetOrdinal("dateAdded"));
                         var url = rdr.GetString(rdr.GetOrdinal("url"));
-                        if (list.Any(_ => _.Url == url))
+                        if (list.Any(_ => string.Equals(_.Url, url, StringComparison.Ordinal)))
                         {
                             Trace.WriteLine($"{url} is duplicate bookmark. Skipping <br />");
                             continue;
