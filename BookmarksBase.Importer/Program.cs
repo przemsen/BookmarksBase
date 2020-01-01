@@ -18,7 +18,6 @@ namespace BookmarksBase.Importer
         {
             // This is a feature switch pattern. If set, mock urls are retrieved instead of real bookmarks
             const bool debug = false;
-            var dontWait = false;
 
             Setup();
 
@@ -29,7 +28,7 @@ namespace BookmarksBase.Importer
 
             Trace.WriteLine("Default importer: Fierfox");
 
-            HandleCommandlineArgs(args, out dontWait);
+            HandleCommandlineArgs(args, out bool dontWait);
 
             BookmarksBaseStorageService storage = null;
             FirefoxBookmarksImporter fbi = null;

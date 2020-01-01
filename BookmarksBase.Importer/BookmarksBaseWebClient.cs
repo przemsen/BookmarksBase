@@ -6,7 +6,7 @@ namespace BookmarksBase.Importer
 {
     public class BookmarksBaseWebClient : WebClient
     {
-        readonly BookmarksImporter.Options _options;
+        // readonly BookmarksImporter.Options _options;
         readonly CookieContainer _cookies = new CookieContainer();
         const int MY_TIMEOUT = 11000;
         const int WEBCLIENT_TIMEOUT = 10000;
@@ -15,7 +15,7 @@ namespace BookmarksBase.Importer
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)
         {
-            _options = options;
+            // _options = options;
         }
 
         public async Task<byte[]> DownloadAsync(string url, bool smallTimeoutForRetry)

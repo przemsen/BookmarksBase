@@ -20,3 +20,12 @@ dotnet_diagnostic.MA0051.severity = none
 
 # MA0008: Add StructLayoutAttribute
 dotnet_diagnostic.MA0008.severity = none
+
+# RCS1018: Add accessibility modifiers.
+dotnet_diagnostic.RCS1018.severity = none
+
+# IDE1006: Naming Styles
+dotnet_diagnostic.IDE1006.severity = none
+
+# RCS1163: Unused parameter.
+dotnet_diagnostic.RCS1163.severity = none

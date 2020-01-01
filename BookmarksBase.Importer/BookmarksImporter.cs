@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
 namespace BookmarksBase.Importer
@@ -23,9 +22,8 @@ namespace BookmarksBase.Importer
         private readonly object _lck;
         private readonly List<string> _errLog;
         private readonly BookmarksBaseStorageService _storage;
-        private readonly UrlEncoder _urlEncoder;
-
         public abstract IEnumerable<Bookmark> GetBookmarks();
+
         protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
         {
             if (!VerifyLynxDependencies())
@@ -35,7 +33,6 @@ namespace BookmarksBase.Importer
             _options = options;
             _lck = new object();
             _errLog = new List<string>();
-            _urlEncoder = UrlEncoder.Default;
             ServicePointManager.Expect100Continue = false;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Ssl3 |
@@ -45,7 +42,7 @@ namespace BookmarksBase.Importer
                 SecurityProtocolType.Tls
                 ;
             ServicePointManager.DefaultConnectionLimit = int.MaxValue;
-            ServicePointManager.ServerCertificateValidationCallback += (s, cert, ch, sec) => { return true; };
+            ServicePointManager.ServerCertificateValidationCallback += (s, cert, ch, sec) => true;
             _storage = storage;
         }
 
@@ -200,7 +197,7 @@ namespace BookmarksBase.Importer
                 }
             }
 
-            if (_errLog.Any())
+            if (_errLog.Count > 0)
             {
                 foreach (var _ in _errLog.OrderBy(_ => _))
                 {
