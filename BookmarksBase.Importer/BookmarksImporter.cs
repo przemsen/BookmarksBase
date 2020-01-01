@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -55,25 +54,16 @@ namespace BookmarksBase.Importer
             byte[] rawData = null;
             long? ret = null;
             BookmarksBaseWebClient webClient = null;
-            bool useFallbackDownloaderInRetry = false;
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
-                if (i > 0 && !useFallbackDownloaderInRetry) await Task.Delay(2000).ConfigureAwait(false);
+                if (i > 0) await Task.Delay(2000).ConfigureAwait(false);
                 try
                 {
-                    Trace.WriteLine($"{GetDateTime()} - Starting{(useFallbackDownloaderInRetry ? " with fallback service" : string.Empty)}: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
+                    Trace.WriteLine($"{GetDateTime()} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     webClient = new BookmarksBaseWebClient(_options);
 
-                    if (useFallbackDownloaderInRetry)
-                    {
-                        var fallbackDownloaderUrl = $"{_options.FallbackDownloaderUrl}&url={_urlEncoder.Encode(url)}";
-                        rawData = await webClient.DownloadAsync(fallbackDownloaderUrl, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        rawData = await webClient.DownloadAsync(url, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
-                    }
+                    rawData = await webClient.DownloadAsync(url, smallTimeoutForRetry: i > 0).ConfigureAwait(false);
 
                     Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     if
@@ -132,8 +122,7 @@ namespace BookmarksBase.Importer
                             }
                             else if (we.Status == WebExceptionStatus.SecureChannelFailure || we.Status == WebExceptionStatus.TrustFailure)
                             {
-                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) SecureChannelFailure - trying fallback download helper service {FailMarker(i)} <br />");
-                                useFallbackDownloaderInRetry = !string.IsNullOrEmpty(_options.FallbackDownloaderUrl);
+                                _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) SecureChannelFailure {FailMarker(i)} <br />");
                             }
                             else
                             {
@@ -151,20 +140,13 @@ namespace BookmarksBase.Importer
                     {
                         lock (_lck)
                         {
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {ae.GetType()} (Aggregate) : {ae.Message} {FailMarker(i)} <br />");
+                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{BookmarksImporterConstants.RetryCount}) {ae.GetType()} (Aggregate) : {ae.InnerException.Message} {FailMarker(i)} <br />");
                         }
                     }
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
-                        if (useFallbackDownloaderInRetry)
-                        {
-                            Trace.WriteLine($"{GetDateTime()} - Retrying with fallback service {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
-                        }
-                        else
-                        {
-                            Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
-                        }
+                        Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     }
                 }
                 catch (Exception e)
@@ -176,15 +158,7 @@ namespace BookmarksBase.Importer
 
                     if (i < BookmarksImporterConstants.RetryCount - 1)
                     {
-                        if (i == BookmarksImporterConstants.RetryCount - 2)
-                        {
-                            Trace.WriteLine($"{GetDateTime()} - Retrying fallback service {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
-                            useFallbackDownloaderInRetry = !string.IsNullOrEmpty(_options.FallbackDownloaderUrl);
-                        }
-                        else
-                        {
-                            Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
-                        }
+                        Trace.WriteLine($"{GetDateTime()} - Retrying {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     }
                 }
                 finally

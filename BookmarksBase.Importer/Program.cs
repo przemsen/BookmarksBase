@@ -31,9 +31,6 @@ namespace BookmarksBase.Importer
 
             HandleCommandlineArgs(args, out dontWait);
 
-            var opts = new BookmarksImporter.Options();
-            opts.FallbackDownloaderUrl = ConfigurationManager.AppSettings["fallbackdowloader"];
-
             BookmarksBaseStorageService storage = null;
             FirefoxBookmarksImporter fbi = null;
             try
@@ -41,7 +38,7 @@ namespace BookmarksBase.Importer
                 storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Writing);
                 try
                 {
-                    fbi = new FirefoxBookmarksImporter(opts, storage);
+                    fbi = new FirefoxBookmarksImporter(null, storage);
                 }
                 catch (FileNotFoundException e)
                 {
