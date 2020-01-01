@@ -1,12 +1,13 @@
-﻿CREATE PROCEDURE [dbo].[Search] @searchString nvarchar(100)
+﻿CREATE PROCEDURE [dbo].[Search]  @searchString nvarchar(100)
 as
 select top 100
     Url
     ,DateAdded
     ,Title
     ,( 
-        case when patindex(@searchString, Title) > 0 then
-            N''
+        case 
+            when patindex(@searchString, Title) > 0 then 'IN TITLE'
+            when patindex(@searchString, Url) > 0 then 'IN URL'
         else
         substring(
             SiteContents,
@@ -31,17 +32,23 @@ select top 100
      ) e
 from dbo.Bookmark 
 where 
-    patindex(@searchString, Title) > 0 or patindex(@searchString, SiteContents) > 0 and
-    Url <> N'080b8253-307d-430a-bcca-9abea46e093a'
+    (
+        patindex(@searchString, Title) > 0 or
+        patindex(@searchString, Url) > 0 or
+        patindex(@searchString, SiteContents) > 0 
+    ) 
+    and
+    Url <> '080b8253-307d-430a-bcca-9abea46e093a'
 union
 select 
     Url, 
     DateAdded, 
-    N'', 
+    '', 
     SiteContents 
 from Bookmark 
 where 
     DateAdded = '1900-01-01' and 
-    Url = N'080b8253-307d-430a-bcca-9abea46e093a'
+    Url = '080b8253-307d-430a-bcca-9abea46e093a'
 order by DateAdded desc
+-- OPTION(USE HINT('ENABLE_PARALLEL_PLAN_PREFERENCE'))
 ;
