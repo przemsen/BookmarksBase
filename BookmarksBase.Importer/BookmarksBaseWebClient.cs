@@ -8,9 +8,9 @@ namespace BookmarksBase.Importer
     {
         // readonly BookmarksImporter.Options _options;
         readonly CookieContainer _cookies = new CookieContainer();
-        const int MY_TIMEOUT = 11000;
-        const int WEBCLIENT_TIMEOUT = 10000;
-        const int SMALL_TIMEOUT_FOR_RETRY = 5000;
+        const int MY_TIMEOUT = 15000;
+        const int WEBCLIENT_TIMEOUT = 14000;
+        const int SMALL_TIMEOUT_FOR_RETRY = 10000;
         public static int CustomTimeout { get; set; } = MY_TIMEOUT;
 
         public BookmarksBaseWebClient(BookmarksImporter.Options options)

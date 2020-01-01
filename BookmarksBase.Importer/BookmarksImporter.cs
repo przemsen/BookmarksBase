@@ -54,7 +54,7 @@ namespace BookmarksBase.Importer
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
-                if (i > 0) await Task.Delay(2000).ConfigureAwait(false);
+                if (i > 0) await Task.Delay(5000).ConfigureAwait(false);
                 try
                 {
                     Trace.WriteLine($"{GetDateTime()} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
