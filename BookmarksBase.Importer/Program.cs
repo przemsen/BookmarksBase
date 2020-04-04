@@ -13,6 +13,7 @@ namespace BookmarksBase.Importer
     internal static class Program
     {
         public const string DB_FILE_NAME = "BookmarksBase.sqlite";
+        public const int DEFAULT_THROTTLER_VALUE = 8;
 
         private static void Main(string[] args)
         {
@@ -32,12 +33,22 @@ namespace BookmarksBase.Importer
 
             BookmarksBaseStorageService storage = null;
             FirefoxBookmarksImporter fbi = null;
+
+            var options = new BookmarksImporter.Options();
+            options.ThrottlerSemaphoreValue = DEFAULT_THROTTLER_VALUE;
+
+            int.TryParse(ConfigurationManager.AppSettings["ThrottlerSemaphoreValue"], out int throttlerSemaphoreValue);
+            if (throttlerSemaphoreValue > 0)
+            {
+                options.ThrottlerSemaphoreValue = throttlerSemaphoreValue;
+            }
+
             try
             {
                 storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Writing);
                 try
                 {
-                    fbi = new FirefoxBookmarksImporter(null, storage);
+                    fbi = new FirefoxBookmarksImporter(options, storage);
                 }
                 catch (FileNotFoundException e)
                 {

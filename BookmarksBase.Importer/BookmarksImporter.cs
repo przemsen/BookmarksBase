@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace BookmarksBase.Importer
 {
@@ -22,7 +23,9 @@ namespace BookmarksBase.Importer
         private readonly object _lck;
         private readonly List<string> _errLog;
         private readonly BookmarksBaseStorageService _storage;
+        private readonly Random _random = new Random();
         public abstract IEnumerable<Bookmark> GetBookmarks();
+        private readonly SemaphoreSlim _throttler;
 
         protected BookmarksImporter(Options options, BookmarksBaseStorageService storage)
         {
@@ -31,6 +34,7 @@ namespace BookmarksBase.Importer
                 throw new FileNotFoundException("Required Lynx files were not found");
             }
             _options = options;
+            _throttler = new SemaphoreSlim(options.ThrottlerSemaphoreValue);
             _lck = new object();
             _errLog = new List<string>();
             ServicePointManager.Expect100Continue = false;
@@ -51,12 +55,14 @@ namespace BookmarksBase.Importer
             byte[] rawData = null;
             long? ret = null;
             BookmarksBaseWebClient webClient = null;
+            await Task.Delay(_random.Next(500, 2000)).ConfigureAwait(false);
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {
-                if (i > 0) await Task.Delay(5000).ConfigureAwait(false);
+                if (i > 0) await Task.Delay(_random.Next(4000, 6000)).ConfigureAwait(false);
                 try
                 {
+                    await _throttler.WaitAsync();
                     Trace.WriteLine($"{GetDateTime()} - Starting: {url} ({i + 1}/{BookmarksImporterConstants.RetryCount}) <br />");
                     webClient = new BookmarksBaseWebClient(_options);
 
@@ -161,6 +167,7 @@ namespace BookmarksBase.Importer
                 finally
                 {
                     webClient.Dispose();
+                    _throttler.Release();
                 }
 
             }
@@ -231,7 +238,7 @@ namespace BookmarksBase.Importer
 
         public class Options
         {
-            public string FallbackDownloaderUrl { get; set; }
+            public int ThrottlerSemaphoreValue { get; set; }
         }
 
         private static string FailMarker(int i)
