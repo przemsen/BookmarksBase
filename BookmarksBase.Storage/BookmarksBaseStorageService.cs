@@ -202,7 +202,7 @@ BEGIN TRANSACTION;
                     b => new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId)
                 );
             }
-            bool inurl = false, caseSensitive = false, intitle = false;
+            bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
 
             pattern = SanitizePattern(pattern);
 
@@ -216,6 +216,11 @@ BEGIN TRANSACTION;
                 caseSensitive = true;
                 pattern = pattern.Substring(9);
             }
+            else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("multiline:", StringComparison.CurrentCulture))
+            {
+                multiline = true;
+                pattern = pattern.Substring(10);
+            }
             else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("intitle:", StringComparison.CurrentCulture))
             {
                 intitle = true;
@@ -228,7 +233,9 @@ BEGIN TRANSACTION;
             {
                 regex = new Regex(
                     pattern,
-                    RegexOptions.Compiled | (!caseSensitive ? RegexOptions.IgnoreCase : 0) | RegexOptions.Singleline
+                    RegexOptions.Compiled |
+                    (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
+                    (multiline ? 0 : RegexOptions.Singleline)
                 );
             }
             catch (Exception e)
@@ -253,20 +260,29 @@ BEGIN TRANSACTION;
                     {
                         var item = new BookmarkSearchResult(b.Url, b.Title, null, b.DateAdded.ToMyDateTime(), b.SiteContentsId);
 
-                        int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
-                        if (excerptStart < 0)
+                        if (multiline)
                         {
-                            excerptStart = 0;
+                            item.ContentExcerpt = match.Value;
+                        }
+                        else
+                        {
+                            int excerptStart = match.Index - DEFAULT_CONTEXT_LENGTH;
+                            if (excerptStart < 0)
+                            {
+                                excerptStart = 0;
+                            }
+
+                            int excerptEnd = match.Index + DEFAULT_CONTEXT_LENGTH;
+                            if (excerptEnd > content.Length - 1)
+                            {
+                                excerptEnd = content.Length - 1;
+                            }
+
+                            item.ContentExcerpt = content.Substring(excerptStart, excerptEnd - excerptStart);
+                            item.ContentExcerpt = _deleteEmptyLinesRegex.Replace(item.ContentExcerpt, string.Empty);
+
                         }
 
-                        int excerptEnd = match.Index + DEFAULT_CONTEXT_LENGTH;
-                        if (excerptEnd > content.Length - 1)
-                        {
-                            excerptEnd = content.Length - 1;
-                        }
-
-                        item.ContentExcerpt = content.Substring(excerptStart, excerptEnd - excerptStart);
-                        item.ContentExcerpt = _deleteEmptyLinesRegex.Replace(item.ContentExcerpt, string.Empty);
                         result.Add(item);
                     }
                 }
