@@ -33,6 +33,7 @@ namespace BookmarksBase.Importer
                 con.Open();
                 using (SQLiteDataReader rdr = cmd.ExecuteReader())
                 {
+                    int counter = 0;
                     while (rdr.Read())
                     {
                         var dateAdded = rdr.GetInt64(rdr.GetOrdinal("dateAdded"));
@@ -54,6 +55,7 @@ namespace BookmarksBase.Importer
                             b.DateAdded = dateAddedOffset.UtcDateTime;
                         }
                         list.Add(b);
+                        counter++;
                     }
                 }
             }

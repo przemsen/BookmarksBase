@@ -55,7 +55,7 @@ namespace BookmarksBase.Importer
             byte[] rawData = null;
             long? ret = null;
             BookmarksBaseWebClient webClient = null;
-            await Task.Delay(_random.Next(500, 2000)).ConfigureAwait(false);
+            await Task.Delay(_random.Next(1000, 3000)).ConfigureAwait(false);
 
             for (int i = 0; i < BookmarksImporterConstants.RetryCount; ++i)
             {

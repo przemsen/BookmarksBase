@@ -1,19 +1,19 @@
 using BookmarksBase.Storage;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text.RegularExpressions;
-using System.Configuration;
 
 namespace BookmarksBase.Importer
 {
     internal static class Program
     {
         public const string DB_FILE_NAME = "BookmarksBase.sqlite";
-        public const int DEFAULT_THROTTLER_VALUE = 8;
+        public const int DEFAULT_THROTTLER_VALUE = 4;
 
         private static void Main(string[] args)
         {
@@ -26,6 +26,8 @@ namespace BookmarksBase.Importer
             {
                 ArchiveExistingFiles();
             }
+
+
 
             Trace.WriteLine("Default importer: Fierfox");
 
@@ -72,8 +74,8 @@ namespace BookmarksBase.Importer
                     return;
                 }
 
-                var htmlExporter = new BookmarksHtmlExporter(bookmarks);
-                htmlExporter.WriteHtml();
+                var jsonExporter = new BookmarksJsonExporter(bookmarks);
+                jsonExporter.WriteJson();
 
                 storage.Init();
 
@@ -110,20 +112,20 @@ namespace BookmarksBase.Importer
                      Url = "https://gunnarpeipman.com/aspnet-core-file-uploads/",
                      ParentTitle = "Folder"
                 },
-            //    new Bookmark
-            //    {
-            //         DateAdded = DateTime.Now,
-            //         Title = "ONET.pl",
-            //         Url = "https://onet.pl",
-            //         ParentTitle = "Folder"
-            //    },
-            //    new Bookmark
-            //    {
-            //         DateAdded = DateTime.Now,
-            //         Title = "o2.pl",
-            //         Url = "https://o2.pl",
-            //         ParentTitle = "Folder"
-            //    }
+                new Bookmark
+                {
+                     DateAdded = DateTime.Now,
+                     Title = "ONET.pl",
+                     Url = "https://onet.pl",
+                     ParentTitle = "Folder"
+                },
+                new Bookmark
+                {
+                     DateAdded = DateTime.Now,
+                     Title = "o2.pl",
+                     Url = "https://o2.pl",
+                     ParentTitle = "Folder"
+                }
             };
             return ret;
         }
