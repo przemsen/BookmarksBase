@@ -29,3 +29,6 @@ dotnet_diagnostic.IDE1006.severity = none
 
 # RCS1163: Unused parameter.
 dotnet_diagnostic.RCS1163.severity = none
+
+# Default severity for analyzer diagnostics with category 'Roslynator'
+dotnet_analyzer_diagnostic.category-Roslynator.severity = none

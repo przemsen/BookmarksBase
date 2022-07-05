@@ -1,39 +1,52 @@
 using BookmarksBase.Storage;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace BookmarksBase.Importer
+namespace BookmarksBase.Importer;
+
+public class BookmarksJsonExporter
 {
-    public class BookmarksJsonExporter
+
+    readonly IEnumerable<Bookmark> _bookmarks;
+
+    public BookmarksJsonExporter(IEnumerable<Bookmark> bookmarks)
     {
-        readonly IEnumerable<Bookmark> _bookmarks;
+        _bookmarks = bookmarks;
+    }
 
-        public BookmarksJsonExporter(IEnumerable<Bookmark> bookmarks)
-        {
-            _bookmarks = bookmarks;
-        }
+    public void WriteJson()
+    {
+        var sb = new StringBuilder(capacity: 500_000);
 
-        public void WriteJson()
-        {
-            var sb = new StringBuilder();
+        var jsonOptions = new JsonSerializerOptions();
+        jsonOptions.Converters.Add(new DateTimeConverter());
+        jsonOptions.WriteIndented = false;
 
-            var json = JsonConvert.SerializeObject(_bookmarks, new JsonSerializerSettings
-            {
-                DateFormatString = "yyyy-MM-dd HH:mm:ss",
-                NullValueHandling = NullValueHandling.Ignore
-            });
+        var json = JsonSerializer.Serialize(_bookmarks, jsonOptions);
 
-            var timeStamp = $"const bookmarksTimeStamp = '{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}';";
+        var timeStamp = $"const bookmarksTimeStamp = '{DateTime.Now.ToString(DateTimeConverter.DATE_FORMAT)}';";
+        sb.Append("const bookmarksArray = ");
+        sb.Append(json);
+        sb.AppendLine(";");
+        sb.AppendLine(timeStamp);
 
-            sb.Append("const bookmarksArray = ");
-            sb.Append(json);
-            sb.AppendLine(";");
-            sb.AppendLine(timeStamp);
+        File.WriteAllText("bookmarksArray.js", sb.ToString());
+    }
 
-            File.WriteAllText("bookmarksArray.js", sb.ToString());
-        }
+    //_________________________________________________________________________
+
+    public class DateTimeConverter : JsonConverter<DateTime>
+    {
+        public const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+        public override void Write(Utf8JsonWriter writer, DateTime date, JsonSerializerOptions options)
+            => writer.WriteStringValue(date.ToString(DATE_FORMAT));
+
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => DateTime.ParseExact(reader.GetString(), DATE_FORMAT, null);
     }
 }
