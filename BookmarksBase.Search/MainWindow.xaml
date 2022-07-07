@@ -2,6 +2,8 @@
     x:Class="BookmarksBase.Search.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     x:Name="winMain"
     Title="BookmarksBase Search"
     Width="740"
@@ -9,7 +11,9 @@
     Closing="winMain_Closing"
     Icon="icon.ico"
     IsTabStop="False"
-    WindowStartupLocation="CenterScreen" KeyDown="winMain_KeyDown">
+    KeyDown="winMain_KeyDown"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
 
     <Window.Resources>
         <SolidColorBrush x:Key="HighlightBrush" />
@@ -43,7 +47,6 @@
                     x:Name="FindTxt"
                     Height="28"
                     VerticalContentAlignment="Center"
-                    GotFocus="FindTxt_GotFocus"
                     PreviewKeyDown="FindTxt_PreviewKeyDown"
                     TabIndex="1"
                     ToolTip="Type the regular expression to search for within the bookmarks" />
@@ -138,7 +141,6 @@
             <RichTextBox
                 x:Name="ResultsRichTxt"
                 Grid.Row="2"
-                Grid.ColumnSpan="2"
                 Height="Auto"
                 AcceptsReturn="False"
                 Background="#FFF3FDFF"
@@ -153,6 +155,33 @@
                 <FlowDocument x:Name="ResultsFlowDocument" />
 
             </RichTextBox>
+
+            <Button
+                Name="NextMatchButton"
+                Grid.Row="2"
+                Width="28"
+                Height="28"
+                Margin="0,5,25,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                d:Visibility="Visible"
+                Background="Transparent"
+                BorderThickness="0,0,0,0"
+                Click="NextMatchButton_Click"
+                Opacity="0.9">
+
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Path=MatchCollection}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Hidden" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Image Source="nexticon.png" />
+            </Button>
 
         </Grid>
 

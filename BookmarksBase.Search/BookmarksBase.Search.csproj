@@ -39,6 +39,7 @@
 
     <ItemGroup>
         <Resource Include="searchicon.png" />
+        <Resource Include="nexticon.png" />
     </ItemGroup>
 
     <ItemGroup>

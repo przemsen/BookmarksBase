@@ -23,27 +23,19 @@ namespace BookmarksBase.Search;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private SearchIconAdorner _searchIconAdorner;
-    private BookmarksBaseStorageService _storage;
-    private BookmarksBaseSearchEngine _searchEngine;
     private const string ERROR_LOG_FILENAME = "search.error.log.txt";
+
+    private readonly SearchIconAdorner _searchIconAdorner;
+    private readonly BookmarksBaseStorageService _storage;
+    private readonly BookmarksBaseSearchEngine _searchEngine;
+    private readonly Brush _highlightBrush;
+    private readonly Paragraph _helpMessageParagrapg;
+
+    private List<Run> _highlightedRuns;
+    private List<Run>.Enumerator _highlightedRunsEnumerator;
+
     private ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
     private ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
-
-    const string _helpMsg = @"Available modifiers:
-all:        -- loads all bookmarks sorted by date descending
-casesens:   -- makes search case sensitive
-help: or ?  -- displays this text
-inurl:      -- searches only in the urls
-intitle:    -- searches only in the titles
-multiline:  -- default grep behaviour, analyzes line by line
-";
-
-    private Brush _highlightBrush;
-
-    private readonly Paragraph _helpMessageBlock;
-
-    public IEnumerable<BookmarkSearchResult> ViewModel { get; set; }
 
     public MainWindow()
     {
@@ -52,17 +44,21 @@ multiline:  -- default grep behaviour, analyzes line by line
 
         try
         {
-            if (theApp.Settings.DatabasePath != null)
+            if (string.IsNullOrEmpty(theApp.Settings.DatabasePath))
             {
-                _storage = new BookmarksBaseStorageService(
-                    BookmarksBaseStorageService.OperationMode.Reading,
-                    theApp.Settings.DatabasePath
+                MessageBox.Show(
+                    "Database path must be specified",
+                    "Fatal error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
                 );
+                Application.Current.Shutdown();
             }
-            else
-            {
-                _storage = new BookmarksBaseStorageService(BookmarksBaseStorageService.OperationMode.Reading);
-            }
+
+            _storage = new BookmarksBaseStorageService(
+                BookmarksBaseStorageService.OperationMode.Reading,
+                theApp.Settings.DatabasePath
+            );
 
             _searchEngine = new BookmarksBaseSearchEngine(
                 (long siteContentsId) => _storage.LoadContents(siteContentsId),
@@ -77,12 +73,12 @@ multiline:  -- default grep behaviour, analyzes line by line
             _highlightBrush = (Brush)(new BrushConverter().ConvertFrom(theApp.Settings.MatchHighlightColor));
             Resources["HighlightBrush"] = _highlightBrush;
 
-            var helpRun = new Run(_helpMsg);
+            var helpRun = new Run(BookmarksBaseSearchEngine.HelpMessage);
             helpRun.Foreground = Brushes.DarkGray;
-            _helpMessageBlock = new Paragraph(helpRun);
+            _helpMessageParagrapg = new Paragraph(helpRun);
 
             ResultsFlowDocument.Blocks.Clear();
-            ResultsFlowDocument.Blocks.Add(_helpMessageBlock);
+            ResultsFlowDocument.Blocks.Add(_helpMessageParagrapg);
         }
         catch (Exception e)
         {
@@ -94,6 +90,7 @@ multiline:  -- default grep behaviour, analyzes line by line
             );
             Application.Current.Shutdown();
         }
+
         var layer = AdornerLayer.GetAdornerLayer(FindTxt);
         _searchIconAdorner = new SearchIconAdorner(FindTxt);
         layer.Add(_searchIconAdorner);
@@ -140,7 +137,6 @@ multiline:  -- default grep behaviour, analyzes line by line
                 var fullContent = b.FullContent ?? _storage.LoadContents(siteContentsId);
                 ResultsFlowDocument.Blocks.Clear();
                 ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
-                //ResultsRichTxt.ScrollToHome();
             }
         }
         else
@@ -155,13 +151,6 @@ multiline:  -- default grep behaviour, analyzes line by line
         {
             await DoSearch();
         }
-    }
-
-    private void FindTxt_GotFocus(object sender, RoutedEventArgs e)
-    {
-
-        //    FindTxt.Text = string.Empty;
-
     }
 
     private void DisplayStatus(string creationDate, int count)
@@ -237,7 +226,7 @@ multiline:  -- default grep behaviour, analyzes line by line
         {
 
             ResultsFlowDocument.Blocks.Clear();
-            ResultsFlowDocument.Blocks.Add(_helpMessageBlock);
+            ResultsFlowDocument.Blocks.Add(_helpMessageParagrapg);
 
             return;
         }
@@ -347,9 +336,6 @@ multiline:  -- default grep behaviour, analyzes line by line
 
     }
 
-    private List<Run> _highlightedRuns = new();
-    private List<Run>.Enumerator _highlightedRunsEnumerator;
-
     private void winMain_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.F3)
@@ -370,10 +356,13 @@ multiline:  -- default grep behaviour, analyzes line by line
             }
         }
 
-        //_highlightedRunsEnumerator.Current.BringIntoView();
-
         ResultsRichTxt.Selection.Select(_highlightedRunsEnumerator.Current.ContentStart, _highlightedRunsEnumerator.Current.ContentEnd);
         ResultsRichTxt.Focus();
+    }
+
+    private void NextMatchButton_Click(object sender, RoutedEventArgs e)
+    {
+        IterateNextResultHighlight();
     }
 }
 

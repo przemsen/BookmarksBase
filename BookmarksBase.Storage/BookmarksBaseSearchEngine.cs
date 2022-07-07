@@ -15,6 +15,15 @@ public class BookmarksBaseSearchEngine
     private readonly IReadOnlyCollection<Bookmark> _loadedBookmarks;
     private readonly Func<long, string> _loadContentsFunc;
 
+    public const string HelpMessage = @"Available modifiers:
+all:        -- loads all bookmarks sorted by date descending
+casesens:   -- makes search case sensitive
+help: or ?  -- displays this text
+inurl:      -- searches only in the urls
+intitle:    -- searches only in the titles
+multiline:  -- default grep behaviour, analyzes line by line
+";
+
     public BookmarksBaseSearchEngine(Expression<Func<long, string>> loadContentsFunc, IReadOnlyCollection<Bookmark> loadedBookmarks)
     {
         _loadContentsFunc = loadContentsFunc.Compile();

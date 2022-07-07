@@ -15,7 +15,7 @@ public class BookmarksBaseStorageService : IDisposable
     private bool disposedValue;
     private SqliteTransaction _transaction;
 
-    public BookmarksBaseStorageService(OperationMode op, string databaseFileName = null)
+    public BookmarksBaseStorageService(OperationMode op, string databaseFileName)
     {
         if (op == OperationMode.Reading)
         {
