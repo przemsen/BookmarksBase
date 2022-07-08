@@ -21,8 +21,8 @@
 
     <Window.Background>
         <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-            <GradientStop Offset="1" Color="#FFC9ECF3" />
-            <GradientStop Offset="0" Color="#FFB3C0E2" />
+            <GradientStop Offset="1" Color="#72EDF2" />
+            <GradientStop Offset="0" Color="#5151E5" />
         </LinearGradientBrush>
     </Window.Background>
 
@@ -48,8 +48,7 @@
                     Height="28"
                     VerticalContentAlignment="Center"
                     PreviewKeyDown="FindTxt_PreviewKeyDown"
-                    TabIndex="1"
-                    ToolTip="Type the regular expression to search for within the bookmarks" />
+                    TabIndex="1" />
             </AdornerDecorator>
 
         </Grid>
@@ -85,12 +84,15 @@
                 GridViewColumnHeader.Click="UrlLst_HeaderClick"
                 IsSynchronizedWithCurrentItem="True"
                 IsTabStop="True"
-                ItemsSource="{Binding}"
                 MouseDoubleClick="UrlLst_MouseDoubleClick"
                 PreviewKeyDown="UrlLst_PreviewKeyDown"
+                ScrollViewer.IsDeferredScrollingEnabled="True"
                 SelectionChanged="UrlLst_SelectionChanged"
                 SizeChanged="UrlLst_SizeChanged"
-                TabIndex="2">
+                TabIndex="2"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                VirtualizingPanel.VirtualizationMode="Recycling">
 
                 <ListView.View>
                     <GridView>
@@ -106,9 +108,7 @@
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
-
                                         </TextBlock.Style>
-
                                     </TextBlock>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
@@ -119,6 +119,38 @@
                             Header="DateAdded" />
                     </GridView>
                 </ListView.View>
+
+                <ListView.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="{x:Type GroupItem}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate>
+                                            <Expander IsExpanded="True">
+                                                <Expander.Header>
+                                                    <StackPanel Margin="0,4,0,4" Orientation="Horizontal">
+                                                        <TextBlock
+                                                            VerticalAlignment="Bottom"
+                                                            FontWeight="Bold"
+                                                            Foreground="Gray"
+                                                            Text="{Binding Name, Mode=OneWay}" />
+                                                        <TextBlock
+                                                            Margin="7,0,0,0"
+                                                            VerticalAlignment="Bottom"
+                                                            Foreground="Gray"
+                                                            Text="{Binding ItemCount, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <ItemsPresenter />
+                                            </Expander>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </ListView.GroupStyle>
 
                 <ListView.ContextMenu>
                     <ContextMenu>

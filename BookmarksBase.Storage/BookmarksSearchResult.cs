@@ -9,6 +9,7 @@ public class BookmarkSearchResult
         string url,
         string title,
         string dateAdded,
+        string folder,
         long? contentsId,
         MatchKind matchKind,
         MatchCollection matchCollection = null,
@@ -18,6 +19,7 @@ public class BookmarkSearchResult
         Url = url;
         Title = title;
         DateAdded = dateAdded;
+        Folder = "Folder name";
         SiteContentsId = contentsId;
         MatchCollection = matchCollection;
         FullContent = fullContent;
@@ -27,6 +29,7 @@ public class BookmarkSearchResult
     public string Title { get; }
     public string FullContent { get; }
     public string DateAdded { get; }
+    public string Folder { get; }
     public long? SiteContentsId { get; }
     public MatchCollection MatchCollection { get; }
     public MatchKind WhatMatched { get; }

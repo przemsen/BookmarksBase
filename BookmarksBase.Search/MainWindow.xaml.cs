@@ -248,6 +248,12 @@ public partial class MainWindow : Window
 
             DataContext = result;
 
+            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(result);
+            PropertyGroupDescription groupDescription = new PropertyGroupDescription(nameof(BookmarkSearchResult.Folder));
+            view.GroupDescriptions.Add(groupDescription);
+
+            UrlLst.ItemsSource = view;
+
             if (!result.Any())
             {
                 ResultsFlowDocument.Blocks.Clear();

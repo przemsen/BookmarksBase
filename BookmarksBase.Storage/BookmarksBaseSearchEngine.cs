@@ -38,7 +38,7 @@ multiline:  -- default grep behaviour, analyzes line by line
         )
         {
             return _loadedBookmarks.Select(
-                b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
+                b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
             );
         }
         bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
@@ -95,7 +95,7 @@ multiline:  -- default grep behaviour, analyzes line by line
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Irrelevant;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, matchKind));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
                 }
             }
             else if (intitle)
@@ -104,7 +104,7 @@ multiline:  -- default grep behaviour, analyzes line by line
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Irrelevant;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, matchKind));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
                 }
             }
             else
@@ -113,7 +113,7 @@ multiline:  -- default grep behaviour, analyzes line by line
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Url;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, matchKind));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
                     return;
                 }
 
@@ -121,7 +121,7 @@ multiline:  -- default grep behaviour, analyzes line by line
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Title;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, matchKind));
+                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
                     return;
                 }
 
@@ -132,7 +132,7 @@ multiline:  -- default grep behaviour, analyzes line by line
                     if (matchCollection.Count > 0)
                     {
                         matchKind = BookmarkSearchResult.MatchKind.Content;
-                        var item = new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.SiteContentsId, matchKind, matchCollection, fullContent: content);
+                        var item = new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind, matchCollection, fullContent: content);
                         result.Add(item);
                     }
                 }
