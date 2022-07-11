@@ -199,6 +199,7 @@
                 Background="Transparent"
                 BorderThickness="0,0,0,0"
                 Click="NextMatchButton_Click"
+                Visibility="Hidden"
                 Opacity="0.9">
                 <Image Source="nexticon.png" />
             </Button>

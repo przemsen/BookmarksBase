@@ -45,7 +45,7 @@ public class BookmarksBaseStorageService : IDisposable
             const string detectOldVersionQuery = "select count(1) from pragma_table_info('Bookmark') where name = 'Folder'";
             using var cmd2 = _sqliteConnection.CreateCommand();
             cmd2.CommandText = detectOldVersionQuery;
-            if (cmd2.ExecuteScalar() is not null)
+            if (cmd2.ExecuteScalar() is 1)
             {
                 CompatLevel = CompatibilityLevel.V3WithFolderNames;
             }
