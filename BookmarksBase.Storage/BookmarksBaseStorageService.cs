@@ -10,6 +10,15 @@ public class BookmarksBaseStorageService : IDisposable
     public IReadOnlyCollection<Bookmark> LoadedBookmarks { get; private set; }
     public DateTime LastModifiedOn { get; }
 
+    public enum CompatibilityLevel
+    {
+        Unspecified,
+        V2WithoutFolderNames,
+        V3WithFolderNames
+    }
+
+    public CompatibilityLevel CompatLevel { get; } = CompatibilityLevel.Unspecified;
+
     private readonly object _lock;
     private readonly SqliteConnection _sqliteConnection;
     private bool disposedValue;
@@ -20,13 +29,31 @@ public class BookmarksBaseStorageService : IDisposable
         if (op == OperationMode.Reading)
         {
             LastModifiedOn = File.GetLastWriteTime(databaseFileName);
-            _sqliteConnection = new SqliteConnection($"Data Source={databaseFileName}; Mode=ReadOnly;");
+
+            SqliteConnectionStringBuilder sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder();
+            sqliteConnectionStringBuilder.Mode = SqliteOpenMode.ReadOnly;
+            sqliteConnectionStringBuilder.DataSource = databaseFileName;
+
+            _sqliteConnection = new SqliteConnection(sqliteConnectionStringBuilder.ConnectionString);
             _sqliteConnection.Open();
 
             const string dbPreparationSQL = "PRAGMA cache_size=5000";
-            var cmd = _sqliteConnection.CreateCommand();
+            using var cmd = _sqliteConnection.CreateCommand();
             cmd.CommandText = dbPreparationSQL;
             cmd.ExecuteNonQuery();
+
+            const string detectOldVersionQuery = "select count(1) from pragma_table_info('Bookmark') where name = 'Folder'";
+            using var cmd2 = _sqliteConnection.CreateCommand();
+            cmd2.CommandText = detectOldVersionQuery;
+            if (cmd2.ExecuteScalar() is not null)
+            {
+                CompatLevel = CompatibilityLevel.V3WithFolderNames;
+            }
+            else
+            {
+                CompatLevel = CompatibilityLevel.V2WithoutFolderNames;
+            }
+
             LoadBookmarksBase();
         }
         else
@@ -40,10 +67,18 @@ public class BookmarksBaseStorageService : IDisposable
 
     private void LoadBookmarksBase()
     {
-        const string selectSQL = "select Url, Title, DateAdded, SiteContentsId from Bookmark;";
+        const string selectSQLV2 = "select Url, Title, DateAdded, SiteContentsId from Bookmark;";
+        const string selectSQLV3 = "select Url, Title, DateAdded, SiteContentsId, Folder from Bookmark;";
+
         var ret = new List<Bookmark>(2000);
         var cmd = _sqliteConnection.CreateCommand();
-        cmd.CommandText = selectSQL;
+        cmd.CommandText = CompatLevel switch
+        {
+            CompatibilityLevel.V3WithFolderNames => selectSQLV3,
+            CompatibilityLevel.V2WithoutFolderNames => selectSQLV2,
+            _ => throw new InvalidOperationException("Compatibility level must be specified when reading bookmarks")
+        };
+
         using (var dataReader = cmd.ExecuteReader())
         {
             while (dataReader.Read())
@@ -54,7 +89,12 @@ public class BookmarksBaseStorageService : IDisposable
                         Url = dataReader.GetString(0),
                         Title = dataReader.GetString(1),
                         DateAdded = dataReader.GetDateTime(2),
-                        SiteContentsId = dataReader.IsDBNull(3) ? null : dataReader.GetInt64(3)
+                        SiteContentsId = dataReader.IsDBNull(3) ? null : dataReader.GetInt64(3),
+                        ParentTitle = CompatLevel switch
+                        {
+                            CompatibilityLevel.V3WithFolderNames => dataReader.GetString(4),
+                            _ => null,
+                        }
                     }
                 );
             }
@@ -64,7 +104,7 @@ public class BookmarksBaseStorageService : IDisposable
 
     public void SaveBookmarksBase(IEnumerable<Bookmark> list)
     {
-        const string insertSQL = "insert into Bookmark (Url, DateAdded, SiteContentsId, Title) values (@p0, @p1, @p2, @p3);";
+        const string insertSQL = "insert into Bookmark (Url, DateAdded, SiteContentsId, Title, Folder) values (@p0, @p1, @p2, @p3, @p4);";
         using var insertCommand = new SqliteCommand(insertSQL, _sqliteConnection);
         insertCommand.Transaction = _transaction;
         foreach (var b in list)
@@ -74,6 +114,7 @@ public class BookmarksBaseStorageService : IDisposable
             insertCommand.Parameters.Add(new SqliteParameter("@p1", b.DateAdded));
             insertCommand.Parameters.Add(new SqliteParameter("@p2", (object)b.SiteContentsId ?? DBNull.Value));
             insertCommand.Parameters.Add(new SqliteParameter("@p3", b.Title));
+            insertCommand.Parameters.Add(new SqliteParameter("@p4", b.ParentTitle));
             insertCommand.ExecuteNonQuery();
         }
     }
@@ -128,6 +169,7 @@ CREATE TABLE IF NOT EXISTS Bookmark (
  Id INTEGER NOT NULL PRIMARY KEY,
  Url TEXT,
  Title TEXT,
+ Folder TEXT,
  SiteContentsId INTEGER NULL,
  DateAdded DATETIME,
  FOREIGN KEY (SiteContentsId) REFERENCES SiteContents (Id)

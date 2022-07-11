@@ -19,7 +19,7 @@ public class BookmarkSearchResult
         Url = url;
         Title = title;
         DateAdded = dateAdded;
-        Folder = "Folder name";
+        Folder = folder;
         SiteContentsId = contentsId;
         MatchCollection = matchCollection;
         FullContent = fullContent;
