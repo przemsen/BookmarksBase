@@ -26,7 +26,7 @@
         </LinearGradientBrush>
     </Window.Background>
 
-    <Grid Margin="4,1,4,4">
+    <Grid Margin="4,4,4,4">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="33" />
@@ -61,8 +61,7 @@
             Background="#FFF3FDFF"
             FontWeight="Bold"
             IsReadOnlyCaretVisible="True"
-            IsTabStop="False"
-            Text="{Binding Title, Mode=OneWay}" />
+            IsTabStop="False" />
 
         <Grid Grid.Row="2">
 

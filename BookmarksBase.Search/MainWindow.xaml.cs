@@ -103,7 +103,7 @@ public partial class MainWindow : Window
         {
             var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
             if (currentBookmark == null) return;
-            Process.Start(currentBookmark.Url);
+            Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = currentBookmark.Url });
         }
 
     }
@@ -114,7 +114,7 @@ public partial class MainWindow : Window
         {
             var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
             if (currentBookmark == null) return;
-            Process.Start(currentBookmark.Url);
+            Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = currentBookmark.Url });
         }
     }
 
@@ -138,6 +138,8 @@ public partial class MainWindow : Window
                 ResultsFlowDocument.Blocks.Clear();
                 ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
             }
+
+            TitleTxt.Text = b.Title;
         }
         else
         {
@@ -245,8 +247,6 @@ public partial class MainWindow : Window
                    .OrderByDescending(b => b.DateAdded)
                    ;
             });
-
-            DataContext = result;
 
             CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(result);
             PropertyGroupDescription groupDescription = new PropertyGroupDescription(nameof(BookmarkSearchResult.Folder));
