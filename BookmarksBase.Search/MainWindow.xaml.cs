@@ -316,6 +316,15 @@ public partial class MainWindow : Window
 
         _highlightedRuns = new();
 
+        if (currentBookmark.MatchCollection.Count > 1)
+        {
+            NextMatchButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            NextMatchButton.Visibility = Visibility.Hidden;
+        }
+
         foreach (var cf in contentFragments)
         {
             var run = new Run(cf.Fragment);

@@ -200,17 +200,6 @@
                 BorderThickness="0,0,0,0"
                 Click="NextMatchButton_Click"
                 Opacity="0.9">
-
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Visibility" Value="Visible" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Path=MatchCollection}" Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Hidden" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
                 <Image Source="nexticon.png" />
             </Button>
 
