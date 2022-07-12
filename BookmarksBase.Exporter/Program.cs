@@ -1,36 +1,65 @@
-﻿using System;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Forms;
+using System.Reflection;
 
-namespace BookmarksBase.Exporter
+namespace BookmarksBase.Exporter;
+
+static class Program
 {
-    static class Program
+    static internal ExporterSettings Settings;
+
+    static void Main()
     {
-        static void Main(string[] args)
+        var configurationBuilder =  new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.exporter.json", optional: false)
+            ;
+        var configuration = configurationBuilder.Build();
+
+        var settings = new ExporterSettings();
+        configuration.GetRequiredSection("Settings").Bind(settings);
+        Settings = settings;
+
+        Trace.WriteLine($"BookmarksBase Exporter {GetAssemblyVersionInfo()}");
+
+        var tr1 = new TextWriterTraceListener(Console.Out);
+        var tr2 = new TextWriterTraceListener(File.CreateText("exporter.log.txt"));
+        Trace.Listeners.Add(tr1);
+        Trace.Listeners.Add(tr2);
+        Trace.AutoFlush = true;
+
+        if (!File.Exists(Settings.DatabaseFileName))
         {
-            var tr1 = new TextWriterTraceListener(Console.Out);
-            var tr2 = new TextWriterTraceListener(File.CreateText("exporter.log.txt"));
-            Trace.Listeners.Add(tr1);
-            Trace.Listeners.Add(tr2);
-            Trace.AutoFlush = true;
+            Trace.WriteLine($"Database file does not exist");
+            Environment.Exit(1);
+        }
+        var exporter = new BookmarksExporter();
 
-            if (args.Length == 0 && !File.Exists(BookmarksExporter.DEFAULT_DB_FILENAME))
-            {
-                Trace.WriteLine($"Please provide either path to {BookmarksExporter.DEFAULT_DB_FILENAME} file as argument or place the file in the current directory");
-                Environment.Exit(1);
-            }
-            var exporter = new BookmarksExporter();
-
-            try
-            {
-                exporter.Run(args.Length == 1 ? args[0] : null);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show($"{e.Message}, {e.StackTrace}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Environment.Exit(1);
-            }
+        try
+        {
+            exporter.Run(Settings.DatabaseFileName);
+        }
+        catch (Exception e)
+        {
+            Trace.WriteLine(e);
+            File.WriteAllText(Settings.ErrorNotificationsFilePath, e.ToString());
+            Environment.Exit(1);
         }
     }
+
+    static string GetAssemblyVersionInfo()
+    {
+        var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var fvi = FileVersionInfo.GetVersionInfo(theAssembly.Location);
+        var inforVersion = theAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+        return $"{fvi.FileMajorPart}.{fvi.FileMinorPart} — Build {inforVersion}";
+    }
+}
+class ExporterSettings
+{
+    public string ConnectionString { get; set; }
+    public string DatabaseFileName { get; set; }
+    public string ErrorNotificationsFilePath { get; set; }
 }

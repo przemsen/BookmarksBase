@@ -1,9 +1,8 @@
-﻿using System;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using System.Data.SqlClient;
-using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace BookmarksBase.Exporter
@@ -13,19 +12,22 @@ namespace BookmarksBase.Exporter
     {
         private SqlConnection _sqlOutConn;
         private SqlCommand _sqlOutCmd;
-        private SQLiteConnection _sqliteInConn;
-        private SQLiteCommand _sqliteInCmd;
-        public const string DEFAULT_DB_FILENAME = "BookmarksBase.sqlite";
+        private SqliteConnection _sqliteInConn;
+        private SqliteCommand _sqliteInCmd;
 
         public void Run(string dbFileName)
         {
             bool bookmarksAvailable = false;
-            var connectionString = ConfigurationManager.ConnectionStrings["dst"].ConnectionString;
+            var connectionString = Program.Settings.ConnectionString;
+
+            SqliteConnectionStringBuilder sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder();
+            sqliteConnectionStringBuilder.Mode = SqliteOpenMode.ReadOnly;
+            sqliteConnectionStringBuilder.DataSource = dbFileName;
 
             using (_sqlOutConn = new SqlConnection(connectionString))
             using (_sqlOutCmd = new SqlCommand("SET ANSI_WARNINGS OFF; truncate table [dbo].[Bookmark];", _sqlOutConn))
-            using (_sqliteInConn = new SQLiteConnection($"Data Source={dbFileName ?? DEFAULT_DB_FILENAME}; Read Only = True;"))
-            using (_sqliteInCmd = new SQLiteCommand(SELECT_SQL, _sqliteInConn))
+            using (_sqliteInConn = new SqliteConnection(sqliteConnectionStringBuilder.ConnectionString))
+            using (_sqliteInCmd = new SqliteCommand(SELECT_SQL, _sqliteInConn))
             {
                 _sqliteInConn.Open();
                 _sqlOutConn.Open();
