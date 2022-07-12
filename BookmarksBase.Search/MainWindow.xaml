@@ -48,7 +48,13 @@
                     Height="28"
                     VerticalContentAlignment="Center"
                     PreviewKeyDown="FindTxt_PreviewKeyDown"
-                    TabIndex="1" />
+                    TabIndex="1">
+                    <TextBox.ContextMenu>
+                        <ContextMenu>
+                            <CheckBox x:Name="FlatViewCheckBox" IsChecked="False">Flat view</CheckBox>
+                        </ContextMenu>
+                    </TextBox.ContextMenu>
+                </TextBox>
             </AdornerDecorator>
 
         </Grid>
@@ -87,7 +93,6 @@
                 PreviewKeyDown="UrlLst_PreviewKeyDown"
                 ScrollViewer.IsDeferredScrollingEnabled="True"
                 SelectionChanged="UrlLst_SelectionChanged"
-                SizeChanged="UrlLst_SizeChanged"
                 TabIndex="2"
                 VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
@@ -95,10 +100,13 @@
 
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Width="450" Header="URL">
+                        <GridViewColumn Width="605" Header="URL">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Name="UrlTextBlock" Text="{Binding Url, Mode=OneWay}">
+                                    <TextBlock
+                                        Name="UrlTextBlock"
+                                        Margin="0,2,0,2"
+                                        Text="{Binding Url, Mode=OneWay}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
@@ -123,29 +131,35 @@
                     <GroupStyle>
                         <GroupStyle.ContainerStyle>
                             <Style TargetType="{x:Type GroupItem}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate>
-                                            <Expander IsExpanded="True">
-                                                <Expander.Header>
-                                                    <StackPanel Margin="0,4,0,4" Orientation="Horizontal">
-                                                        <TextBlock
-                                                            VerticalAlignment="Bottom"
-                                                            FontWeight="Bold"
-                                                            Foreground="Gray"
-                                                            Text="{Binding Name, Mode=OneWay}" />
-                                                        <TextBlock
-                                                            Margin="7,0,0,0"
-                                                            VerticalAlignment="Bottom"
-                                                            Foreground="Gray"
-                                                            Text="{Binding ItemCount, Mode=OneWay}" />
-                                                    </StackPanel>
-                                                </Expander.Header>
-                                                <ItemsPresenter />
-                                            </Expander>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=FlatViewCheckBox}" Value="False">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <Expander IsExpanded="True">
+                                                        <Expander.Header>
+                                                            <StackPanel Margin="0,4,0,4" Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    VerticalAlignment="Bottom"
+                                                                    FontWeight="Bold"
+                                                                    Foreground="Gray"
+                                                                    Text="{Binding Name, Mode=OneWay}" />
+                                                                <TextBlock
+                                                                    Margin="7,0,0,0"
+                                                                    VerticalAlignment="Bottom"
+                                                                    Foreground="Gray"
+                                                                    Text="{Binding ItemCount, Mode=OneWay}" />
+                                                            </StackPanel>
+                                                        </Expander.Header>
+                                                        <ItemsPresenter />
+                                                    </Expander>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+
                             </Style>
                         </GroupStyle.ContainerStyle>
                     </GroupStyle>
@@ -199,8 +213,8 @@
                 Background="Transparent"
                 BorderThickness="0,0,0,0"
                 Click="NextMatchButton_Click"
-                Visibility="Hidden"
-                Opacity="0.9">
+                Opacity="0.9"
+                Visibility="Hidden">
                 <Image Source="nexticon.png" />
             </Button>
 

@@ -65,7 +65,7 @@ public partial class MainWindow : Window
                 _storage.LoadedBookmarks
             );
 
-            DisplayStatus(
+            DisplayInitialStatus(
                 _storage.LastModifiedOn.ToString(),
                 _storage.LoadedBookmarks.Count
             );
@@ -155,7 +155,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DisplayStatus(string creationDate, int count)
+    private void DisplayInitialStatus(string creationDate, int count)
     {
         var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
         var fvi = FileVersionInfo.GetVersionInfo(theAssembly.Location);
@@ -164,16 +164,6 @@ public partial class MainWindow : Window
         this.Title += $" — Build {inforVersion}";
         string status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}";
         StatusTxt.Text = status;
-    }
-
-    private void UrlLst_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (e.WidthChanged)
-        {
-            GridView view = UrlLst.View as GridView;
-            view.Columns[0].Width = Width - 130;
-
-        }
     }
 
     private void UrlLst_HeaderClick(object sender, RoutedEventArgs e)
