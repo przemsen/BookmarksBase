@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace BookmarksBase.Importer;
@@ -69,6 +70,7 @@ static class Program
 
         #endregion
 
+        Trace.WriteLine($"BookmarksBase Importer {GetAssemblyVersionInfo()}");
         Trace.WriteLine("Default importer: Firefox");
 
         BookmarksBaseStorageService storage = null;
@@ -202,6 +204,14 @@ static class Program
             Trace.WriteLine("Exception while trying to archive previous database file:");
             Trace.WriteLine(e.Message);
         }
+    }
+
+    static string GetAssemblyVersionInfo()
+    {
+        var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var fvi = FileVersionInfo.GetVersionInfo(theAssembly.Location);
+        var inforVersion = theAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+        return $"{fvi.FileMajorPart}.{fvi.FileMinorPart} — Build {inforVersion}";
     }
 
     #endregion
