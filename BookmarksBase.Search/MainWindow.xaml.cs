@@ -225,18 +225,23 @@ public partial class MainWindow : Window
         }
 
         ResultsFlowDocument.Blocks.Clear();
+        Stopwatch stopWatch = Stopwatch.StartNew();
+        long searchEngineElapsedMs = 0l;
 
         try
         {
             var textToSearch = FindTxt.Text;
             FindTxt.IsEnabled = false;
 
+            var searchEngineStopWatch = Stopwatch.StartNew();
             var result = await Task.Run(() =>
             {
                 return _searchEngine
                    .DoSearch(textToSearch)
                    ;
             });
+            searchEngineStopWatch.Stop();
+            searchEngineElapsedMs = searchEngineStopWatch.ElapsedMilliseconds;
 
             if (GroupedViewCheckBox.IsChecked is true)
             {
@@ -291,6 +296,8 @@ public partial class MainWindow : Window
             FindTxt.IsEnabled = true;
             FindTxt.Focus();
             _searchIconAdorner.ResetHighlight();
+            stopWatch.Stop();
+            StatusTxt.Text = $"Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
     }
 

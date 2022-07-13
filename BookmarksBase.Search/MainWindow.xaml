@@ -229,16 +229,13 @@
                 d:Foreground="Red"
                 d:Text="1"
                 d:Visibility="Visible"
-                FontWeight="Bold"
                 Background="#7F4E4E4E"
                 FontSize="{Binding RelativeSource={RelativeSource Self}, Path=Text.Length, Mode=OneWay, Converter={StaticResource MatchCountToFontSizeConverter}}"
+                FontWeight="Bold"
                 Foreground="{DynamicResource HighlightBrush}"
                 TextAlignment="Center"
-                Visibility="Hidden"
                 TextWrapping="Wrap"
-                >
-
-            </TextBlock>
+                Visibility="Hidden" />
         </Grid>
 
         <Border
