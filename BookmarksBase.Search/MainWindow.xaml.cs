@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -234,15 +235,22 @@ public partial class MainWindow : Window
             {
                 return _searchEngine
                    .DoSearch(textToSearch)
-                   .OrderByDescending(b => b.DateAdded)
                    ;
             });
 
-            CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(result);
-            PropertyGroupDescription groupDescription = new PropertyGroupDescription(nameof(BookmarkSearchResult.Folder));
-            view.GroupDescriptions.Add(groupDescription);
-
-            UrlLst.ItemsSource = view;
+            if (GroupedViewCheckBox.IsChecked is true)
+            {
+                CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(result);
+                PropertyGroupDescription groupDescription = new PropertyGroupDescription(nameof(BookmarkSearchResult.Folder));
+                view.GroupDescriptions.Add(groupDescription);
+                view.SortDescriptions.Add(new SortDescription(nameof(BookmarkSearchResult.Folder), ListSortDirection.Ascending));
+                view.SortDescriptions.Add(new SortDescription(nameof(BookmarkSearchResult.DateAdded), ListSortDirection.Descending));
+                UrlLst.ItemsSource = view;
+            }
+            else
+            {
+                UrlLst.ItemsSource = result.OrderByDescending(b => b.DateAdded);
+            }
 
             if (!result.Any())
             {
@@ -309,10 +317,14 @@ public partial class MainWindow : Window
         if (currentBookmark.MatchCollection.Count > 1)
         {
             NextMatchButton.Visibility = Visibility.Visible;
+            MatchCountTextBlock.Visibility = Visibility.Visible;
+            MatchCountTextBlock.Text = currentBookmark.MatchCollection.Count.ToString();
         }
         else
         {
+            MatchCountTextBlock.Visibility = Visibility.Hidden;
             NextMatchButton.Visibility = Visibility.Hidden;
+            MatchCountTextBlock.Text = null;
         }
 
         foreach (var cf in contentFragments)
@@ -369,6 +381,18 @@ public partial class MainWindow : Window
     {
         IterateNextResultHighlight();
     }
+}
+
+public class MatchCountToFontSizeConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        < 3 => 14,
+        >= 3 and < 5 => 10,
+        _ => 8
+    };
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
 }
 
 #region Adorner
