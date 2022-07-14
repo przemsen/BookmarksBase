@@ -15,7 +15,6 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace BookmarksBase.Search;
 
@@ -26,7 +25,6 @@ public partial class MainWindow : Window
 {
     private const string ERROR_LOG_FILENAME = "search.error.log.txt";
 
-    private readonly SearchIconAdorner _searchIconAdorner;
     private readonly BookmarksBaseStorageService _storage;
     private readonly BookmarksBaseSearchEngine _searchEngine;
     private readonly Brush _highlightBrush;
@@ -92,9 +90,6 @@ public partial class MainWindow : Window
             Application.Current.Shutdown();
         }
 
-        var layer = AdornerLayer.GetAdornerLayer(FindTxt);
-        _searchIconAdorner = new SearchIconAdorner(FindTxt);
-        layer.Add(_searchIconAdorner);
         FindTxt.Focus();
     }
 
@@ -295,7 +290,6 @@ public partial class MainWindow : Window
         {
             FindTxt.IsEnabled = true;
             FindTxt.Focus();
-            _searchIconAdorner.ResetHighlight();
             stopWatch.Stop();
             StatusTxt.Text = $"Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
@@ -388,6 +382,16 @@ public partial class MainWindow : Window
     {
         IterateNextResultHighlight();
     }
+
+    private async void DoSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!FindTxt.IsEnabled)
+        {
+            return;
+        }
+
+        await DoSearch();
+    }
 }
 
 public class MatchCountToFontSizeConverter : IValueConverter
@@ -401,117 +405,3 @@ public class MatchCountToFontSizeConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
 }
-
-#region Adorner
-
-public class SearchIconAdorner : Adorner
-{
-    private readonly VisualCollection _visualCollection;
-    private readonly Image _image;
-    private readonly Border _border;
-    private readonly SolidColorBrush _bckgrBrush;
-    private readonly SolidColorBrush _borderBrush;
-    private readonly SolidColorBrush _bckgrBrush2;
-    private readonly SolidColorBrush _borderBrush2;
-
-    private bool IsFindTxtEnabled => ((TextBox)AdornedElement).IsEnabled;
-
-    public SearchIconAdorner(UIElement adornedElement) : base(adornedElement)
-    {
-        _bckgrBrush = new SolidColorBrush(Colors.Gold);
-        _bckgrBrush.Opacity = 0.3d;
-        _borderBrush = new SolidColorBrush(Colors.DarkGoldenrod);
-
-        _bckgrBrush2 = new SolidColorBrush(Colors.White);
-        _bckgrBrush2.Opacity = 0;
-        _borderBrush2 = new SolidColorBrush(Colors.White);
-
-        _visualCollection = new VisualCollection(this);
-        _image = new Image();
-        _border = new Border();
-        _border.Padding = new Thickness(1);
-
-        _border.BorderBrush = _borderBrush2;
-        _border.BorderThickness = new Thickness(1);
-        _border.Background = _bckgrBrush2;
-
-        _border.SnapsToDevicePixels = true;
-
-        _border.Child = _image;
-        _image.Source = new BitmapImage(new Uri("pack://application:,,,/BookmarksBase.Search;component/searchicon.png"));
-        _image.Stretch = Stretch.Uniform;
-
-        _visualCollection.Add(_border);
-    }
-
-    protected override void OnMouseEnter(MouseEventArgs e)
-    {
-        if (!IsFindTxtEnabled)
-        {
-            return;
-        }
-
-        var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
-
-        if (b is Border)
-        {
-            _border.BorderBrush = _borderBrush;
-            _border.BorderThickness = new Thickness(1);
-            _border.Background = _bckgrBrush;
-        }
-    }
-
-    protected override void OnMouseLeave(MouseEventArgs e)
-    {
-        if (!IsFindTxtEnabled)
-        {
-            return;
-        }
-
-        var b = VisualTreeHelper.GetChild(e.OriginalSource as DependencyObject, 0);
-
-        if (b is Border)
-        {
-            _border.BorderBrush = _borderBrush2;
-            _border.BorderThickness = new Thickness(1);
-            _border.Background = _bckgrBrush2;
-        }
-
-    }
-
-    protected override async void OnMouseDown(MouseButtonEventArgs e)
-    {
-        if (!IsFindTxtEnabled)
-        {
-            return;
-        }
-
-        if (Application.Current.Windows[0] is MainWindow w)
-        {
-            await w.DoSearch();
-        }
-    }
-
-    public void ResetHighlight()
-    {
-        _border.BorderBrush = _borderBrush2;
-        _border.BorderThickness = new Thickness(1);
-        _border.Background = _bckgrBrush2;
-    }
-
-    protected override Visual GetVisualChild(int index) => _visualCollection[index];
-    protected override int VisualChildrenCount => _visualCollection.Count;
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        double controlWidth = AdornedElement.RenderSize.Width;
-        double controlHeight = AdornedElement.RenderSize.Height;
-        double imgSize = controlHeight - 9;
-        _border.Width = imgSize;
-        _border.Height = imgSize;
-        _border.Arrange(new Rect(controlWidth - imgSize * 1.3, imgSize / 4, imgSize, imgSize));
-        return finalSize;
-    }
-
-}
-
-#endregion
