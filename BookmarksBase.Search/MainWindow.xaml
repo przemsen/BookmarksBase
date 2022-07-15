@@ -66,7 +66,6 @@
                 <Image Source="searchicon.png" />
             </Button>
 
-
         </Grid>
 
         <TextBox
@@ -100,6 +99,7 @@
                 IsTabStop="True"
                 MouseDoubleClick="UrlLst_MouseDoubleClick"
                 PreviewKeyDown="UrlLst_PreviewKeyDown"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.IsDeferredScrollingEnabled="True"
                 SelectionChanged="UrlLst_SelectionChanged"
                 TabIndex="2"
@@ -107,34 +107,86 @@
                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                 VirtualizingPanel.VirtualizationMode="Recycling">
 
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Width="605" Header="URL">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock
-                                        Name="UrlTextBlock"
-                                        Margin="0,2,0,2"
-                                        Text="{Binding Url, Mode=OneWay}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Path=WhatMatched}" Value="Url">
-                                                        <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn
-                            Width="Auto"
-                            DisplayMemberBinding="{Binding DateAdded, Mode=OneWay}"
-                            Header="DateAdded" />
-                    </GridView>
-                </ListView.View>
+                <ListView.Resources>
+                    <GridViewColumn
+                        x:Key="UrlGridViewColumn"
+                        Width="560"
+                        x:Shared="false"
+                        Header="URL">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock
+                                    Name="UrlTextBlock"
+                                    Margin="0,2,0,2"
+                                    Text="{Binding Url, Mode=OneWay}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=WhatMatched}" Value="Url">
+                                                    <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn
+                        x:Key="DateAddedGridViewColumn"
+                        Width="80"
+                        x:Shared="false"
+                        DisplayMemberBinding="{Binding DateAdded, Mode=OneWay}"
+                        Header="DateAdded" />
+
+                    <GridViewColumn
+                        x:Key="FolderGridViewColumn"
+                        Width="50"
+                        x:Shared="false"
+                        Header="Folder">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock
+                                    Margin="0,2,0,2"
+                                    FontSize="10"
+                                    Text="{Binding Folder, Mode=OneWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                </ListView.Resources>
+
+                <ListView.Style>
+                    <Style TargetType="ListView">
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="False">
+                                <Setter Property="View">
+                                    <Setter.Value>
+                                        <GridView>
+                                            <StaticResource ResourceKey="UrlGridViewColumn" />
+                                            <StaticResource ResourceKey="DateAddedGridViewColumn" />
+                                            <StaticResource ResourceKey="FolderGridViewColumn" />
+                                        </GridView>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="True">
+                                <Setter Property="View">
+                                    <Setter.Value>
+                                        <GridView>
+                                            <StaticResource ResourceKey="UrlGridViewColumn" />
+                                            <StaticResource ResourceKey="DateAddedGridViewColumn" />
+                                        </GridView>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Style>
 
                 <ListView.GroupStyle>
                     <GroupStyle>
@@ -166,6 +218,11 @@
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneTime}" Value="False">
+                                        <Setter Property="Template" Value="{x:Null}" />
+                                    </DataTrigger>
+
                                 </Style.Triggers>
                             </Style>
                         </GroupStyle.ContainerStyle>
