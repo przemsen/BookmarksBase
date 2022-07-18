@@ -118,28 +118,20 @@ public partial class MainWindow : Window
     {
         if (UrlLst.SelectedItem is BookmarkSearchResult b)
         {
+            TitleTxt.Text = b.Title;
+
             if (b.WhatMatched == BookmarkSearchResult.MatchKind.Content)
             {
                 RenderResults();
-                return;
-            }
-            else if (b.WhatMatched == BookmarkSearchResult.MatchKind.Title)
-            {
-                TitleTxt.Background = _highlightBrush;
-            }
 
-            if (b.SiteContentsId is long siteContentsId)
+            }
+            else if (b.SiteContentsId is long siteContentsId)
             {
                 var fullContent = b.FullContent ?? _storage.LoadContents(siteContentsId);
                 ResultsFlowDocument.Blocks.Clear();
                 ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
             }
 
-            TitleTxt.Text = b.Title;
-        }
-        else
-        {
-            TitleTxt.Background = null;
         }
     }
 
@@ -240,16 +232,11 @@ public partial class MainWindow : Window
 
             if (GroupedViewCheckBox.IsChecked is true)
             {
-                CollectionView view = (CollectionView)CollectionViewSource.GetDefaultView(result);
-                PropertyGroupDescription groupDescription = new PropertyGroupDescription(nameof(BookmarkSearchResult.Folder));
-                view.GroupDescriptions.Add(groupDescription);
-                view.SortDescriptions.Add(new SortDescription(nameof(BookmarkSearchResult.Folder), ListSortDirection.Ascending));
-                view.SortDescriptions.Add(new SortDescription(nameof(BookmarkSearchResult.DateAdded), ListSortDirection.Descending));
-                UrlLst.ItemsSource = view;
+                UrlLst.DataContext = result;
             }
             else
             {
-                UrlLst.ItemsSource = result.OrderByDescending(b => b.DateAdded);
+                UrlLst.DataContext = result.OrderByDescending(b => b.DateAdded);
             }
 
             if (!result.Any())
