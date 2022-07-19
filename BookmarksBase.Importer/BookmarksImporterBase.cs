@@ -113,8 +113,8 @@ abstract class BookmarksImporterBase : IDisposable
                 Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
                 if
                 (
-                    httpResponse.Content.Headers.ContentType.MediaType.Contains("text") is false ||
-                    httpResponse.Content.Headers.ContentType.MediaType.Contains("html") is false
+                    httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("text") is false ||
+                    httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
                 )
                 {
                     return new DownloadResult(DownloadedFileName: null, ContentsIfProblem: "Unsupported content type", IsSuccess: false);
@@ -164,7 +164,7 @@ abstract class BookmarksImporterBase : IDisposable
                 {
                     lock (_lck)
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre} {FailMarker(i)} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre.Message} {FailMarker(i)} <br />");
                     }
                 }
 
@@ -177,9 +177,13 @@ abstract class BookmarksImporterBase : IDisposable
             {
                 lock (_lck)
                 {
-                    if (e.InnerException is not null)
+                    if (e.InnerException is TimeoutException)
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Not HttpRequestException, but inner: {e.InnerException} {FailMarker(i)} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Timeout {FailMarker(i)} <br />");
+                    }
+                    else if (e.InnerException is not null)
+                    {
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Not HttpRequestException, but inner: {e.InnerException.Message} {FailMarker(i)} <br />");
                     }
                     else
                     {
@@ -316,7 +320,7 @@ abstract class BookmarksImporterBase : IDisposable
     public static class Constants
     {
         public const string DEFAULTHTTPCLIENT = nameof(DEFAULTHTTPCLIENT);
-        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 1000;
+        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 2500;
         public const int WAIT_TIMEOUT_FOR_LYNX = 1000;
         public const int DOWNLOAD_RETRY_COUNT = 3;
         public const int DEFAULT_THROTTLER_VALUE  = 4;
@@ -330,7 +334,7 @@ abstract class BookmarksImporterBase : IDisposable
 
         public const string LYNX_COMMAND = "lynx\\lynx.exe";
         public const string LYNX_COMMANDLINE_OPTIONS =
-            "-nolist -nomargins -dump -nonumbers -width=90 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
+            "-nolist -nomargins -dump -nonumbers -width=100 -hiddenlinks=ignore -display_charset=UTF-8 -cfg=lynx\\lynx.cfg ";
     }
 
     //_________________________________________________________________________

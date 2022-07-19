@@ -70,8 +70,8 @@ static class Program
 
         #endregion
 
-        Trace.WriteLine($"BookmarksBase Importer {GetAssemblyVersionInfo()}");
-        Trace.WriteLine("Default importer: Firefox");
+        Trace.WriteLine($"BookmarksBase Importer {GetAssemblyVersionInfo()} <br />");
+        Trace.WriteLine("Default importer: Firefox <br />");
 
         BookmarksBaseStorageService storage = null;
         FirefoxBookmarksImporter fbi = null;
