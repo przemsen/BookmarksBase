@@ -30,7 +30,7 @@ multiline:  -- default grep behaviour, analyzes line by line
         _loadedBookmarks = loadedBookmarks;
     }
 
-    public IEnumerable<BookmarkSearchResult> DoSearch(string pattern)
+    public IReadOnlyCollection<BookmarkSearchResult> DoSearch(string pattern)
     {
         if (
             pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", StringComparison.CurrentCulture)
@@ -39,7 +39,7 @@ multiline:  -- default grep behaviour, analyzes line by line
         {
             return _loadedBookmarks.Select(
                 b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
-            );
+            ).ToArray();
         }
         bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
 

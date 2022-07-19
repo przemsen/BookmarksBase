@@ -28,13 +28,10 @@ public partial class MainWindow : Window
     private readonly BookmarksBaseStorageService _storage;
     private readonly BookmarksBaseSearchEngine _searchEngine;
     private readonly Brush _highlightBrush;
-    private readonly Paragraph _helpMessageParagrapg;
+    private readonly Paragraph _helpMessageParagraph;
 
     private List<Run> _highlightedRuns;
     private List<Run>.Enumerator _highlightedRunsEnumerator;
-
-    private ListSortDirection _urlSortDirection = ListSortDirection.Ascending;
-    private ListSortDirection _dateSortDirection = ListSortDirection.Ascending;
 
     public MainWindow()
     {
@@ -72,12 +69,16 @@ public partial class MainWindow : Window
             _highlightBrush = (Brush)(new BrushConverter().ConvertFrom(theApp.Settings.MatchHighlightColor));
             Resources["HighlightBrush"] = _highlightBrush;
 
-            var helpRun = new Run(BookmarksBaseSearchEngine.HelpMessage);
-            helpRun.Foreground = Brushes.DarkGray;
-            _helpMessageParagrapg = new Paragraph(helpRun);
+            var helpRun =
+                new Run(BookmarksBaseSearchEngine.HelpMessage)
+                {
+                    Foreground = Brushes.DarkGray
+                };
+
+            _helpMessageParagraph = new Paragraph(helpRun);
 
             ResultsFlowDocument.Blocks.Clear();
-            ResultsFlowDocument.Blocks.Add(_helpMessageParagrapg);
+            ResultsFlowDocument.Blocks.Add(_helpMessageParagraph);
         }
         catch (Exception e)
         {
@@ -93,12 +94,15 @@ public partial class MainWindow : Window
         FindTxt.Focus();
     }
 
+    //-------------------------------------------------------------------------
+
     private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is TextBlock)
         {
-            var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
-            if (currentBookmark == null) return;
+            if (UrlLst.SelectedItem is not BookmarkSearchResult currentBookmark)
+                return;
+
             Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = currentBookmark.Url });
         }
 
@@ -108,8 +112,9 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Return)
         {
-            var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
-            if (currentBookmark == null) return;
+            if (UrlLst.SelectedItem is not BookmarkSearchResult currentBookmark)
+                return;
+
             Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = currentBookmark.Url });
         }
     }
@@ -123,7 +128,6 @@ public partial class MainWindow : Window
             if (b.WhatMatched == BookmarkSearchResult.MatchKind.Content)
             {
                 RenderResults();
-
             }
             else if (b.SiteContentsId is long siteContentsId)
             {
@@ -143,6 +147,46 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (UrlLst.SelectedItem is BookmarkSearchResult b)
+        {
+            Clipboard.SetText(b.Url);
+        }
+    }
+
+    private void MainWin_Closing(object sender, CancelEventArgs e)
+    {
+        _storage?.Dispose();
+    }
+
+    private void MainWin_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F3)
+        {
+            IterateNextResultHighlight();
+        }
+    }
+
+    private void NextMatchButton_Click(object sender, RoutedEventArgs e)
+    {
+        IterateNextResultHighlight();
+    }
+
+    private async void DoSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!FindTxt.IsEnabled)
+        {
+            return;
+        }
+
+        await DoSearch();
+    }
+
+    //-------------------------------------------------------------------------
+
+    #region Private methods, not event handlers
+
     private void DisplayInitialStatus(string creationDate, int count)
     {
         var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -154,45 +198,27 @@ public partial class MainWindow : Window
         StatusTxt.Text = status;
     }
 
-    private void UrlLst_HeaderClick(object sender, RoutedEventArgs e)
+    private void IterateNextResultHighlight()
     {
-        GridViewColumnHeader column = e.OriginalSource as GridViewColumnHeader;
-        if (column == null) return;
-
-        ICollectionView resultDataView = CollectionViewSource.GetDefaultView(UrlLst.ItemsSource);
-        if (resultDataView == null) return;
-
-        resultDataView.SortDescriptions.Clear();
-
-        switch (column.Content.ToString())
+        if (!_highlightedRunsEnumerator.MoveNext())
         {
-            case "URL":
-                _urlSortDirection = (_urlSortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending);
-                resultDataView.SortDescriptions.Add(new SortDescription("Url", _urlSortDirection));
-                break;
-
-            case "DateAdded":
-                _dateSortDirection = (_dateSortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending);
-                resultDataView.SortDescriptions.Add(new SortDescription("DateAdded", _dateSortDirection));
-                break;
-
-            default:
-                break;
+            _highlightedRunsEnumerator.Dispose();
+            _highlightedRunsEnumerator = _highlightedRuns.GetEnumerator();
+            if (!_highlightedRunsEnumerator.MoveNext())
+            {
+                return;
+            }
         }
 
-    }
-    private void MenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        if (UrlLst.SelectedItem is BookmarkSearchResult b)
-        {
-            Clipboard.SetText(b.Url);
-        }
+        ResultsRichTxt.Selection.Select(_highlightedRunsEnumerator.Current.ContentStart, _highlightedRunsEnumerator.Current.ContentEnd);
+        ResultsRichTxt.Focus();
     }
 
-    public async Task DoSearch()
+    private async Task DoSearch()
     {
 
-        if (
+        if
+        (
             FindTxt.Text
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith("help:", StringComparison.CurrentCulture)
@@ -206,14 +232,14 @@ public partial class MainWindow : Window
         {
 
             ResultsFlowDocument.Blocks.Clear();
-            ResultsFlowDocument.Blocks.Add(_helpMessageParagrapg);
+            ResultsFlowDocument.Blocks.Add(_helpMessageParagraph);
 
             return;
         }
 
         ResultsFlowDocument.Blocks.Clear();
         Stopwatch stopWatch = Stopwatch.StartNew();
-        long searchEngineElapsedMs = 0l;
+        long searchEngineElapsedMs = 0L;
 
         try
         {
@@ -236,10 +262,10 @@ public partial class MainWindow : Window
             }
             else
             {
-                UrlLst.DataContext = result.OrderByDescending(b => b.DateAdded);
+                UrlLst.DataContext = result.OrderByDescending(b => b.DateAdded).ToArray();
             }
 
-            if (!result.Any())
+            if (result.Count == 0)
             {
                 ResultsFlowDocument.Blocks.Clear();
                 ResultsFlowDocument.Blocks.Add(new Paragraph(new Run("No results")));
@@ -282,18 +308,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void winMain_Closing(object sender, CancelEventArgs e)
-    {
-        if (_storage != null)
-        {
-            _storage.Dispose();
-        }
-    }
-
     private void RenderResults()
     {
-        var currentBookmark = UrlLst.SelectedItem as BookmarkSearchResult;
-        if (currentBookmark is null)
+        if (UrlLst.SelectedItem is not BookmarkSearchResult currentBookmark)
             return;
 
         var contentFragments = currentBookmark.GetContentFragments();
@@ -302,7 +319,7 @@ public partial class MainWindow : Window
 
         _highlightedRuns = new();
 
-        if (currentBookmark.MatchCollection.Count > 1)
+        if (currentBookmark.MatchCollection.Count > 0)
         {
             NextMatchButton.Visibility = Visibility.Visible;
             MatchCountTextBlock.Visibility = Visibility.Visible;
@@ -341,45 +358,11 @@ public partial class MainWindow : Window
 
     }
 
-    private void winMain_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.F3)
-        {
-            IterateNextResultHighlight();
-        }
-    }
+    #endregion
 
-    private void IterateNextResultHighlight()
-    {
-        if (!_highlightedRunsEnumerator.MoveNext())
-        {
-            _highlightedRunsEnumerator.Dispose();
-            _highlightedRunsEnumerator = _highlightedRuns.GetEnumerator();
-            if (!_highlightedRunsEnumerator.MoveNext())
-            {
-                return;
-            }
-        }
-
-        ResultsRichTxt.Selection.Select(_highlightedRunsEnumerator.Current.ContentStart, _highlightedRunsEnumerator.Current.ContentEnd);
-        ResultsRichTxt.Focus();
-    }
-
-    private void NextMatchButton_Click(object sender, RoutedEventArgs e)
-    {
-        IterateNextResultHighlight();
-    }
-
-    private async void DoSearchButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (!FindTxt.IsEnabled)
-        {
-            return;
-        }
-
-        await DoSearch();
-    }
 }
+
+//-------------------------------------------------------------------------
 
 public class MatchCountToFontSizeConverter : IValueConverter
 {
