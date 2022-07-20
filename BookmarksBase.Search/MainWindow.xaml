@@ -282,7 +282,7 @@
                 Margin="0,2"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
-                Background="#FF5694BF"
+                Background="#FF9DE1F4"
                 IsTabStop="False"
                 ResizeBehavior="PreviousAndNext" />
 
