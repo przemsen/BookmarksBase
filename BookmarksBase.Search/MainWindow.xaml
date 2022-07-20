@@ -1,112 +1,276 @@
-﻿<Window x:Class="BookmarksBase.Search.MainWindow"
-        x:Name="winMain"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BookmarksBase Search"
-        Height="570"
-        Width="740"
-        WindowStartupLocation="CenterScreen"
-        Icon="icon.ico"
-        IsTabStop="False"
-        Closing="winMain_Closing"
-        >
+﻿<Window
+    x:Class="BookmarksBase.Search.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:BookmarksBase.Search"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+    x:Name="MainWin"
+    Title="BookmarksBase Search"
+    Width="740"
+    Height="570"
+    Closing="MainWin_Closing"
+    Icon="icon.ico"
+    IsTabStop="False"
+    KeyDown="MainWin_KeyDown"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
 
     <Window.Resources>
-        <Style x:Key="InitMsgStyle" TargetType="{x:Type Control}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}, Path=DisplayHelp}" Value="True">
-                    <Setter Property="Foreground" Value="#FFAEAEAE" />
-                    <Setter Property="FontStyle" Value="Italic" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+        <SolidColorBrush x:Key="HighlightBrush" />
+        <local:MatchCountToFontSizeConverter x:Key="MatchCountToFontSizeConverter" />
     </Window.Resources>
 
     <Window.Background>
-        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="#FFC9ECF3" Offset="1"/>
-            <GradientStop Offset="0" Color="#FFB3C0E2"/>
+        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+            <GradientStop Offset="1" Color="#72EDF2" />
+            <GradientStop Offset="0" Color="#5151E5" />
         </LinearGradientBrush>
     </Window.Background>
 
-    <Grid Margin="4,1,4,4">
+    <Grid Margin="4,4,4,4">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="33" />
             <RowDefinition Height="33" />
-            <RowDefinition Height="*"  />
-            <RowDefinition Height="25"  />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="25" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" >
+        <Grid Grid.Row="0">
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="80" />
-            </Grid.ColumnDefinitions>
+            <TextBox
+                x:Name="FindTxt"
+                Height="28"
+                VerticalContentAlignment="Center"
+                PreviewKeyDown="FindTxt_PreviewKeyDown"
+                TabIndex="1">
+                <TextBox.ContextMenu>
+                    <ContextMenu>
+                        <CheckBox x:Name="GroupedViewCheckBox" IsChecked="False">
+                            Folder grouping
+                        </CheckBox>
+                    </ContextMenu>
+                </TextBox.ContextMenu>
+            </TextBox>
 
-            <AdornerDecorator Grid.ColumnSpan="2" ToolTip="Search">
-                <TextBox x:Name="FindTxt"
-                         Height="28"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Type the regular expression to search for within the bookmarks"
-                         TabIndex="1"
-                         PreviewKeyDown="FindTxt_PreviewKeyDown"
-                         Style="{StaticResource InitMsgStyle}"
-                         GotFocus="FindTxt_GotFocus"
-                         >
-                </TextBox>
-            </AdornerDecorator>
+            <Button
+                Name="DoSearchButton"
+                Width="23"
+                Height="23"
+                Margin="0,5,12,0"
+                Padding="2,2,2,2"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="Transparent"
+                BorderThickness="0,0,0,0"
+                Click="DoSearchButton_Click">
+                <Image Source="searchicon.png" />
+            </Button>
 
         </Grid>
 
-        <TextBox x:Name="TitleTxt"
-                 Grid.Row="1"
-                 Height="28"
-                 Background="#FFF3FDFF"
-                 Text="{Binding Title}"
-                 FontWeight="Bold"
-                 VerticalContentAlignment="Center"
-                 IsTabStop="False"
-                 IsReadOnlyCaretVisible="True"
-        />
+        <TextBox
+            x:Name="TitleTxt"
+            Grid.Row="1"
+            Height="28"
+            VerticalContentAlignment="Center"
+            FontWeight="Bold"
+            IsReadOnly="True"
+            IsReadOnlyCaretVisible="True"
+            IsTabStop="False">
 
-        <Grid Grid.Row="2"  >
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+
+                    <Setter Property="Background" Value="#FFF3FDFF" />
+
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=ItemsSource/WhatMatched, ElementName=UrlLst, Mode=OneWay}" Value="Title">
+                            <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+
+                </Style>
+            </TextBox.Style>
+
+        </TextBox>
+
+        <Grid Grid.Row="2">
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"  />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="210"  />
+                <RowDefinition Height="210" />
             </Grid.RowDefinitions>
 
-            <ListView Grid.Row="0"
-                     Grid.ColumnSpan="2"
-                     ItemsSource="{Binding}"
-                     IsSynchronizedWithCurrentItem="True"
-                     Margin="0,4,0,0"
-                     Foreground="#FF060672"
-                     x:Name="UrlLst"
-                     MouseDoubleClick="UrlLst_MouseDoubleClick"
-                     IsTabStop="True"
-                     TabIndex="2"
-                     PreviewKeyDown="UrlLst_PreviewKeyDown"
-                     Focusable="False"
-                     SizeChanged="UrlLst_SizeChanged"
-                     GridViewColumnHeader.Click="UrlLst_HeaderClick"
-                     FontSize="13"
-                     SelectionChanged="UrlLst_SelectionChanged"
-                     >
+            <ListView
+                x:Name="UrlLst"
+                Grid.Row="0"
+                Grid.ColumnSpan="2"
+                Margin="0,4,0,0"
+                Focusable="False"
+                FontSize="13"
+                Foreground="#FF060672"
+                IsSynchronizedWithCurrentItem="True"
+                IsTabStop="True"
+                MouseDoubleClick="UrlLst_MouseDoubleClick"
+                PreviewKeyDown="UrlLst_PreviewKeyDown"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.IsDeferredScrollingEnabled="True"
+                SelectionChanged="UrlLst_SelectionChanged"
+                TabIndex="2"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                VirtualizingPanel.VirtualizationMode="Recycling">
 
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn  Header="URL" DisplayMemberBinding="{Binding Url}"  Width="450"/>
-                        <GridViewColumn  Header="DateAdded" DisplayMemberBinding="{Binding DateAdded}" Width="Auto" />
-                    </GridView>
-                </ListView.View>
+                <ListView.Resources>
+                    <GridViewColumn
+                        x:Key="UrlGridViewColumn"
+                        Width="560"
+                        x:Shared="false"
+                        Header="URL">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock
+                                    Name="UrlTextBlock"
+                                    Margin="0,2,0,2"
+                                    Text="{Binding Url, Mode=OneWay}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=WhatMatched}" Value="Url">
+                                                    <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn
+                        x:Key="DateAddedGridViewColumn"
+                        Width="80"
+                        x:Shared="false"
+                        DisplayMemberBinding="{Binding DateAdded, Mode=OneWay}"
+                        Header="DateAdded" />
+
+                    <GridViewColumn
+                        x:Key="FolderGridViewColumn"
+                        Width="50"
+                        x:Shared="false"
+                        Header="Folder">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock
+                                    Margin="0,2,0,2"
+                                    FontSize="10"
+                                    Text="{Binding Folder, Mode=OneWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <CollectionViewSource x:Key="FolderGroupsCollectionViewSource" Source="{Binding}">
+
+                        <CollectionViewSource.GroupDescriptions>
+                            <PropertyGroupDescription PropertyName="Folder" />
+                        </CollectionViewSource.GroupDescriptions>
+                        <CollectionViewSource.SortDescriptions>
+                            <scm:SortDescription Direction="Ascending" PropertyName="Folder" />
+                            <scm:SortDescription Direction="Descending" PropertyName="DateAdded" />
+                        </CollectionViewSource.SortDescriptions>
+                    </CollectionViewSource>
+
+                    <CollectionViewSource x:Key="NoFolderGroupsCollectionViewSource" Source="{Binding}" />
+
+                </ListView.Resources>
+
+                <ListView.Style>
+                    <Style TargetType="ListView">
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="True">
+                                <Setter Property="ItemsSource" Value="{Binding Source={StaticResource FolderGroupsCollectionViewSource}}" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="False">
+                                <Setter Property="ItemsSource" Value="{Binding Source={StaticResource NoFolderGroupsCollectionViewSource}}" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="False">
+                                <Setter Property="View">
+                                    <Setter.Value>
+                                        <GridView>
+                                            <StaticResource ResourceKey="UrlGridViewColumn" />
+                                            <StaticResource ResourceKey="DateAddedGridViewColumn" />
+                                            <StaticResource ResourceKey="FolderGridViewColumn" />
+                                        </GridView>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneWay}" Value="True">
+                                <Setter Property="View">
+                                    <Setter.Value>
+                                        <GridView>
+                                            <StaticResource ResourceKey="UrlGridViewColumn" />
+                                            <StaticResource ResourceKey="DateAddedGridViewColumn" />
+                                        </GridView>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Style>
+
+                <ListView.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="{x:Type GroupItem}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneTime}" Value="True">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <Expander IsExpanded="False">
+                                                        <Expander.Header>
+                                                            <StackPanel Margin="0,4,0,4" Orientation="Horizontal">
+                                                                <TextBlock
+                                                                    VerticalAlignment="Bottom"
+                                                                    FontWeight="Bold"
+                                                                    Foreground="Gray"
+                                                                    Text="{Binding Name, Mode=OneWay}" />
+                                                                <TextBlock
+                                                                    Margin="7,0,0,0"
+                                                                    VerticalAlignment="Bottom"
+                                                                    Foreground="Gray"
+                                                                    Text="{Binding ItemCount, Mode=OneWay}" />
+                                                            </StackPanel>
+                                                        </Expander.Header>
+                                                        <ItemsPresenter />
+                                                    </Expander>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=GroupedViewCheckBox, Mode=OneTime}" Value="False">
+                                        <Setter Property="Template" Value="{x:Null}" />
+                                    </DataTrigger>
+
+                                </Style.Triggers>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </ListView.GroupStyle>
 
                 <ListView.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Copy" Click="MenuItem_Click"/>
+                        <MenuItem Click="MenuItem_Click" Header="Copy" />
                     </ContextMenu>
                 </ListView.ContextMenu>
 
@@ -114,41 +278,81 @@
 
             <GridSplitter
                 Grid.Row="1"
-                ResizeBehavior="PreviousAndNext"
                 Height="2"
-                HorizontalAlignment="Stretch"
                 Margin="0,2"
+                HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
-                Background="#FF5694BF"
-                IsTabStop="False"/>
+                Background="#FF9DE1F4"
+                IsTabStop="False"
+                ResizeBehavior="PreviousAndNext" />
 
-            <TextBox x:Name="ExcerptTxt"
-                     Text="{Binding ContentExcerpt}"
-                     Background="#FFF3FDFF"
-                     Height="Auto"
-                     Grid.Row="2"
-                     Margin="0"
-                     FontFamily="Consolas"
-                     IsReadOnly="True"
-                     Grid.ColumnSpan="2"
-                     FontSize="14"
-                     TextWrapping="Wrap"
-                     VerticalScrollBarVisibility="Auto"
-                     IsTabStop="False"
-            />
+            <RichTextBox
+                x:Name="ResultsRichTxt"
+                Grid.Row="2"
+                Height="Auto"
+                d:VerticalScrollBarVisibility="Visible"
+                AcceptsReturn="False"
+                Background="#FFF3FDFF"
+                FontFamily="Consolas"
+                FontSize="14"
+                HorizontalScrollBarVisibility="Disabled"
+                IsInactiveSelectionHighlightEnabled="True"
+                IsReadOnly="True"
+                IsTabStop="False"
+                VerticalScrollBarVisibility="Auto">
+
+                <FlowDocument x:Name="ResultsFlowDocument" />
+
+            </RichTextBox>
+
+            <Button
+                Name="NextMatchButton"
+                Grid.Row="2"
+                Width="28"
+                Height="28"
+                Margin="0,5,21,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                d:Visibility="Visible"
+                Background="Transparent"
+                BorderThickness="0,0,0,0"
+                Click="NextMatchButton_Click"
+                Opacity="0.9"
+                Visibility="Hidden">
+                <Image Source="nexticon.png" />
+            </Button>
+
+            <TextBlock
+                x:Name="MatchCountTextBlock"
+                Grid.Row="2"
+                Width="20"
+                Height="20"
+                Margin="0,35,25,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                d:Foreground="Red"
+                d:Text="1"
+                d:Visibility="Visible"
+                Background="#7F4E4E4E"
+                FontSize="{Binding RelativeSource={RelativeSource Self}, Path=Text.Length, Mode=OneWay, Converter={StaticResource MatchCountToFontSizeConverter}}"
+                FontWeight="Bold"
+                Foreground="{DynamicResource HighlightBrush}"
+                TextAlignment="Center"
+                TextWrapping="Wrap"
+                Visibility="Hidden" />
         </Grid>
 
-        <Border Background="#FFF9F4DF"
-                Grid.Row="3"
-                Margin="0,5,0,0"
-                BorderThickness="1"
-                BorderBrush="#FF595959"
-                >
-            <TextBlock x:Name="StatusTxt"
-                       Padding="2,0,0,0"
-                       Foreground="#FF4D4C4C"
-                       >
-            Status
+        <Border
+            Grid.Row="3"
+            Margin="0,5,0,0"
+            Background="#FFF9F4DF"
+            BorderBrush="#FF595959"
+            BorderThickness="1">
+            <TextBlock
+                x:Name="StatusTxt"
+                Padding="2,0,0,0"
+                Foreground="#FF4D4C4C">
+                Status
             </TextBlock>
         </Border>
     </Grid>

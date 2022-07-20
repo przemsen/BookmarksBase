@@ -1,13 +1,12 @@
-﻿using System;
+using System;
 
-namespace BookmarksBase.Search.Storage
+namespace BookmarksBase.Search.Storage;
+
+public static class Extensions
 {
-    public static class Extensions
+    const string FMT = "yyyy-MM-dd";
+    public static string ToMyDateTime(this DateTime dt)
     {
-        const string FMT = "yyyy-MM-dd";
-        public static string ToMyDateTime(this DateTime dt)
-        {
-            return dt.ToString(FMT);
-        }
+        return dt.ToString(FMT);
     }
 }

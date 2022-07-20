@@ -1,12 +1,11 @@
 #### BookmarksBase is a tool that allows for searching in your bookmarks including entire contents of web sites, addresses and titles. ####
 
-![Screen](https://user-images.githubusercontent.com/6310503/39720331-4e9b4d32-523c-11e8-9b4a-85032ac392d7.png)
+![Screen](/screenshot.jpg?raw=true)
 
 ## Currently supports only Firefox ##
 
 # How to start? #
 
-- Download the current release: **[Download link](https://github.com/przemsen/BookmarksBase/releases/latest)**
 - Run `BookmarksBase.Importer`. It reads all your bookmarks, downloads clean text from the bookmarked websites and stores in current folder SQLite database file.
 - Please note, that some anti-virus software may consider the importer as suspicious. It opens many connections in parallel to download web sites, which is quite unusual. I personally added whole folder to Windows Defender exceptions.
 - Enjoy using `BookmarksBase.Search.exe`. It supports regular expressions and searches in the indexed web page contents. Type `help:` to view some extra features. 
@@ -14,8 +13,6 @@
 ----------
 
 # 1. Instructions for the user #
-
-In application package you get:
 
 - `BookmarksBase.Importer.exe` &mdash; **First run this tool** to generate database of bookmarks along with their contents. 
 - `BookmarksBase.Search.exe` &mdash; **Main application intended for searching.** It searches through text from bookmarked websites
@@ -27,6 +24,7 @@ In application package you get:
 - If you wish to express any number of any characters use `.*`
 - Double click on results list item opens it in a web browser
 - Enter while focused on results list also opens selected item in a web browser
+- You can switch between grouped and ungrouped view by using option in the context menu
 
 # 2. Source code structure #
 
@@ -37,6 +35,6 @@ In application package you get:
 
 # 3. Release notes #
 
-- All applications are compiled for .NET Framework version 4.7.1
+- All applications are written for .NET6 (at the moment)
 - Currently only Firefox web browser is supported. Other implementations can easily be created by inheriting `BookmarksImporter` class (following open-closed principle)
 - HTML parsing is done with [Lynx](http://lynx.isc.org) and thus its binaries (included) are required to run the importer

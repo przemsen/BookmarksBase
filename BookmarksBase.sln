@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28803.202
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Importer", "BookmarksBase.Importer\BookmarksBase.Importer.csproj", "{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookmarksBase.Importer", "BookmarksBase.Importer\BookmarksBase.Importer.csproj", "{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Tests", "BookmarksBase.Tests\BookmarksBase.Tests.csproj", "{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookmarksBase.Search", "BookmarksBase.Search\BookmarksBase.Search.csproj", "{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Search", "BookmarksBase.Search\BookmarksBase.Search.csproj", "{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Storage", "BookmarksBase.Storage\BookmarksBase.Storage.csproj", "{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookmarksBase.Storage", "BookmarksBase.Storage\BookmarksBase.Storage.csproj", "{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Exporter", "BookmarksBase.Exporter\BookmarksBase.Exporter.csproj", "{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}"
 EndProject
@@ -28,10 +26,6 @@ Global
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE4E1760-A9F1-4CC1-9C07-56DFE0D02FCE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{41C1EB2E-5492-4D7B-B1EB-085FC49718F7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EC5DCF4-F301-41CD-9A7C-ED3237F44AE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
