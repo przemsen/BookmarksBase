@@ -45,15 +45,7 @@
                 Height="28"
                 VerticalContentAlignment="Center"
                 PreviewKeyDown="FindTxt_PreviewKeyDown"
-                TabIndex="1">
-                <TextBox.ContextMenu>
-                    <ContextMenu>
-                        <CheckBox x:Name="GroupedViewCheckBox" IsChecked="False">
-                            Folder grouping
-                        </CheckBox>
-                    </ContextMenu>
-                </TextBox.ContextMenu>
-            </TextBox>
+                TabIndex="1" />
 
             <Button
                 Name="DoSearchButton"
@@ -80,6 +72,14 @@
             IsReadOnly="True"
             IsReadOnlyCaretVisible="True"
             IsTabStop="False">
+
+            <TextBox.ContextMenu>
+                <ContextMenu>
+                    <CheckBox x:Name="GroupedViewCheckBox" IsChecked="False">
+                        Folder grouping
+                    </CheckBox>
+                </ContextMenu>
+            </TextBox.ContextMenu>
 
             <TextBox.Style>
                 <Style TargetType="TextBox">
