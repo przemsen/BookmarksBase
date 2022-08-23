@@ -204,10 +204,7 @@ public partial class MainWindow : Window
         {
             _highlightedRunsEnumerator.Dispose();
             _highlightedRunsEnumerator = _highlightedRuns.GetEnumerator();
-            if (!_highlightedRunsEnumerator.MoveNext())
-            {
-                return;
-            }
+            _highlightedRunsEnumerator.MoveNext();
         }
 
         ResultsRichTxt.Selection.Select(_highlightedRunsEnumerator.Current.ContentStart, _highlightedRunsEnumerator.Current.ContentEnd);
