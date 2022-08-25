@@ -124,18 +124,7 @@ public partial class MainWindow : Window
         if (UrlLst.SelectedItem is BookmarkSearchResult b)
         {
             TitleTxt.Text = b.Title;
-
-            if (b.WhatMatched == BookmarkSearchResult.MatchKind.Content)
-            {
-                RenderResults();
-            }
-            else if (b.SiteContentsId is long siteContentsId)
-            {
-                var fullContent = b.FullContent ?? _storage.LoadContents(siteContentsId);
-                ResultsFlowDocument.Blocks.Clear();
-                ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
-            }
-
+            RenderBookmarkContents(b);
         }
     }
 
@@ -305,10 +294,29 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RenderResults()
+    private void RenderBookmarkContents(BookmarkSearchResult currentBookmark)
     {
-        if (UrlLst.SelectedItem is not BookmarkSearchResult currentBookmark)
+        // Fast path - just display contents with no highlighting
+        if (
+            currentBookmark.WhatMatched != BookmarkSearchResult.MatchKind.Content &&
+            currentBookmark.SiteContentsId is long siteContentsId
+        )
+        {
+            var fullContent = currentBookmark.FullContent ?? _storage.LoadContents(siteContentsId);
+            ResultsFlowDocument.Blocks.Clear();
+            ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
+            ResultsRichTxt.ScrollToHome();
+
+            MatchCountTextBlock.Visibility = Visibility.Hidden;
+            NextMatchButton.Visibility = Visibility.Hidden;
+            MatchCountTextBlock.Text = null;
             return;
+        }
+        // Nothing to display
+        else if (currentBookmark.SiteContentsId is null)
+        {
+            return;
+        }
 
         var contentFragments = currentBookmark.GetContentFragments();
 
@@ -316,18 +324,9 @@ public partial class MainWindow : Window
 
         _highlightedRuns = new();
 
-        if (currentBookmark.MatchCollection.Count > 0)
-        {
-            NextMatchButton.Visibility = Visibility.Visible;
-            MatchCountTextBlock.Visibility = Visibility.Visible;
-            MatchCountTextBlock.Text = currentBookmark.MatchCollection.Count.ToString();
-        }
-        else
-        {
-            MatchCountTextBlock.Visibility = Visibility.Hidden;
-            NextMatchButton.Visibility = Visibility.Hidden;
-            MatchCountTextBlock.Text = null;
-        }
+        NextMatchButton.Visibility = Visibility.Visible;
+        MatchCountTextBlock.Visibility = Visibility.Visible;
+        MatchCountTextBlock.Text = currentBookmark.MatchCollection.Count.ToString();
 
         foreach (var cf in contentFragments)
         {
@@ -352,11 +351,9 @@ public partial class MainWindow : Window
         ResultsFlowDocument.Blocks.Add(paragraph);
 
         IterateNextResultHighlight();
-
     }
 
     #endregion
-
 }
 
 //-------------------------------------------------------------------------
