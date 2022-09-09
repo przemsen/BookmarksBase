@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var theApp = (App)Application.Current;
+        var theApp = (App)System.Windows.Application.Current;
 
         try
         {
@@ -48,7 +49,7 @@ public partial class MainWindow : Window
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-                Application.Current.Shutdown();
+                System.Windows.Application.Current.Shutdown();
             }
 
             _storage = new BookmarksBaseStorageService(
@@ -88,10 +89,17 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK,
                 MessageBoxImage.Error
             );
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
 
         FindTxt.Focus();
+
+        Observable
+            .FromEventPattern(FindTxt, "TextChanged")
+            .Throttle(TimeSpan.FromSeconds(.2))
+            .ObserveOn(SynchronizationContext.Current)
+            .Subscribe(_ => HighlightSearchKeywords())
+            ;
     }
 
     //-------------------------------------------------------------------------
@@ -125,14 +133,6 @@ public partial class MainWindow : Window
         {
             TitleTxt.Text = b.Title;
             RenderBookmarkContents(b);
-        }
-    }
-
-    private async void FindTxt_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Return)
-        {
-            await DoSearch();
         }
     }
 
@@ -176,6 +176,31 @@ public partial class MainWindow : Window
 
     #region Private methods, not event handlers
 
+    private void HighlightSearchKeywords()
+    {
+        var tr = GetFindTxtTextRangeForText(BookmarksBaseSearchEngine.KeywordsList);
+
+        FindTxt.BeginChange();
+
+        if (tr is null)
+        {
+            tr = new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
+            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
+            tr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Normal);
+            tr.ApplyPropertyValue(TextElement.FontFamilyProperty, SystemFonts.MessageFontFamily);
+            tr.ApplyPropertyValue(TextElement.FontSizeProperty, SystemFonts.MessageFontSize);
+        }
+        else
+        {
+            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.OrangeRed);
+            tr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Bold);
+            tr.ApplyPropertyValue(TextElement.FontFamilyProperty, new FontFamily("Consolas"));
+            tr.ApplyPropertyValue(TextElement.FontSizeProperty, 14d);
+        }
+
+        FindTxt.EndChange();
+    }
+
     private void DisplayInitialStatus(string creationDate, int count)
     {
         var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -197,7 +222,47 @@ public partial class MainWindow : Window
         }
 
         ResultsRichTxt.Selection.Select(_highlightedRunsEnumerator.Current.ContentStart, _highlightedRunsEnumerator.Current.ContentEnd);
-        ResultsRichTxt.Focus();
+
+        Rect screenPos = ResultsRichTxt.Selection.Start.GetCharacterRect(LogicalDirection.Forward);
+        double offset = screenPos.Top + ResultsRichTxt.VerticalOffset;
+        ResultsRichTxt.ScrollToVerticalOffset(offset - ResultsRichTxt.ActualHeight / 2);
+    }
+
+    private TextRange _findTxtContentsTextRange = null;
+    private string GetFindTxtText()
+    {
+        if (_findTxtContentsTextRange is null)
+        {
+            _findTxtContentsTextRange = new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
+        }
+
+        return _findTxtContentsTextRange.Text.TrimEnd();
+    }
+
+    private TextRange GetFindTxtTextRangeForText(string[] keywords)
+    {
+        var findTxtText = GetFindTxtText();
+        int foundIndexOf = 0;
+        string foundKeyword = null;
+
+        foreach (var k in keywords)
+        {
+            foundIndexOf = findTxtText.IndexOf(k);
+            if (foundIndexOf >= 0)
+            {
+                foundKeyword = k;
+                break;
+            }
+        }
+
+        if (foundKeyword is null)
+        {
+            return null;
+        }
+
+        var startPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundIndexOf + 2);
+        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundIndexOf + foundKeyword.Length + 1);
+        return new TextRange(startPtr, endPtr);
     }
 
     private async Task DoSearch()
@@ -205,13 +270,13 @@ public partial class MainWindow : Window
 
         if
         (
-            FindTxt.Text
+            GetFindTxtText()
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith("help:", StringComparison.CurrentCulture)
 
             ||
 
-            FindTxt.Text
+            GetFindTxtText()
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith("?", System.StringComparison.CurrentCulture)
         )
@@ -226,10 +291,11 @@ public partial class MainWindow : Window
         ResultsFlowDocument.Blocks.Clear();
         Stopwatch stopWatch = Stopwatch.StartNew();
         long searchEngineElapsedMs = 0L;
+        int resultsCount = 0;
 
         try
         {
-            var textToSearch = FindTxt.Text;
+            var textToSearch = GetFindTxtText();
             FindTxt.IsEnabled = false;
 
             var searchEngineStopWatch = Stopwatch.StartNew();
@@ -253,9 +319,23 @@ public partial class MainWindow : Window
 
             if (result.Count == 0)
             {
+                TitleTxt.Text = null;
                 ResultsFlowDocument.Blocks.Clear();
                 ResultsFlowDocument.Blocks.Add(new Paragraph(new Run("No results")));
+
+                MatchCountTextBlock.Visibility = Visibility.Hidden;
+                NextMatchButton.Visibility = Visibility.Hidden;
+                MatchCountTextBlock.Text = null;
+
+                FindTxt.IsEnabled = true;
+                FindTxt.Focus();
             }
+            else
+            {
+                FindTxt.IsEnabled = true;
+                UrlLst.Focus();
+            }
+            resultsCount = result.Count;
         }
         catch (BookmarksBaseSearchEngine.RegExException ree)
         {
@@ -287,10 +367,8 @@ public partial class MainWindow : Window
         }
         finally
         {
-            FindTxt.IsEnabled = true;
-            FindTxt.Focus();
             stopWatch.Stop();
-            StatusTxt.Text = $"Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
+            StatusTxt.Text = $"Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
     }
 
@@ -315,6 +393,7 @@ public partial class MainWindow : Window
         // Nothing to display
         else if (currentBookmark.SiteContentsId is null)
         {
+            ResultsFlowDocument.Blocks.Clear();
             return;
         }
 

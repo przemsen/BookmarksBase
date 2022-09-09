@@ -8,8 +8,8 @@
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
     x:Name="MainWin"
     Title="BookmarksBase Search"
-    Width="740"
-    Height="570"
+    Width="800"
+    Height="600"
     Closing="MainWin_Closing"
     Icon="icon.ico"
     IsTabStop="False"
@@ -40,11 +40,12 @@
 
         <Grid Grid.Row="0">
 
-            <TextBox
+            <RichTextBox
                 x:Name="FindTxt"
                 Height="28"
-                VerticalContentAlignment="Center"
-                PreviewKeyDown="FindTxt_PreviewKeyDown"
+                Padding="0,4,0,0"
+                AcceptsReturn="False"
+                IsUndoEnabled="False"
                 TabIndex="1" />
 
             <Button
@@ -57,7 +58,8 @@
                 VerticalAlignment="Top"
                 Background="Transparent"
                 BorderThickness="0,0,0,0"
-                Click="DoSearchButton_Click">
+                Click="DoSearchButton_Click"
+                TabIndex="2">
                 <Image Source="searchicon.png" />
             </Button>
 
@@ -102,7 +104,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="210" />
+                <RowDefinition Height="265" />
             </Grid.RowDefinitions>
 
             <ListView
@@ -120,7 +122,7 @@
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.IsDeferredScrollingEnabled="True"
                 SelectionChanged="UrlLst_SelectionChanged"
-                TabIndex="2"
+                TabIndex="3"
                 VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                 VirtualizingPanel.VirtualizationMode="Recycling">
@@ -128,7 +130,7 @@
                 <ListView.Resources>
                     <GridViewColumn
                         x:Key="UrlGridViewColumn"
-                        Width="560"
+                        Width="620"
                         x:Shared="false"
                         Header="URL">
                         <GridViewColumn.CellTemplate>
@@ -299,6 +301,7 @@
                 IsInactiveSelectionHighlightEnabled="True"
                 IsReadOnly="True"
                 IsTabStop="False"
+                IsUndoEnabled="False"
                 VerticalScrollBarVisibility="Auto">
 
                 <FlowDocument x:Name="ResultsFlowDocument" />
@@ -317,6 +320,7 @@
                 Background="Transparent"
                 BorderThickness="0,0,0,0"
                 Click="NextMatchButton_Click"
+                IsTabStop="False"
                 Opacity="0.9"
                 Visibility="Hidden">
                 <Image Source="nexticon.png" />
