@@ -15,14 +15,26 @@ public class BookmarksBaseSearchEngine
     private readonly IReadOnlyCollection<Bookmark> _loadedBookmarks;
     private readonly Func<long, string> _loadContentsFunc;
 
-    public const string HelpMessage = @"Available modifiers:
+    public const string HelpMessage = @"Available modifier keywords:
 all:        -- loads all bookmarks sorted by date descending
 casesens:   -- makes search case sensitive
 help: or ?  -- displays this text
 inurl:      -- searches only in the urls
 intitle:    -- searches only in the titles
 multiline:  -- default grep behaviour, analyzes line by line
+err:        -- search for erroneous bookmarks
 ";
+
+    public static readonly string[] KeywordsList = new[]
+    {
+        "all:",
+        "casesens:",
+        "help:",
+        "inurl:",
+        "intitle:",
+        "multiline:",
+        "err:"
+    };
 
     public BookmarksBaseSearchEngine(Expression<Func<long, string>> loadContentsFunc, IReadOnlyCollection<Bookmark> loadedBookmarks)
     {
@@ -41,8 +53,9 @@ multiline:  -- default grep behaviour, analyzes line by line
                 b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
             ).ToArray();
         }
-        bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
 
+        bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
+        Regex regex = null;
         pattern = SanitizePattern(pattern);
 
         if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("inurl:", StringComparison.CurrentCulture))
@@ -65,22 +78,32 @@ multiline:  -- default grep behaviour, analyzes line by line
             intitle = true;
             pattern = pattern[8..];
         }
-
-        Regex regex = null;
-
-        try
+        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("err:", StringComparison.CurrentCulture))
         {
-            regex = new Regex(
-                pattern,
+            regex = regex = new Regex(
+                @" \(erroneous\)$",
                 RegexOptions.Compiled |
-                (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
-                (multiline ? 0 : RegexOptions.Singleline)
+                RegexOptions.Singleline
             );
+            intitle = true;
         }
-        catch (Exception e)
+
+        if (regex is null)
         {
-            var ex = new RegExException(e.Message, e);
-            throw ex;
+            try
+            {
+                regex = new Regex(
+                    pattern,
+                    RegexOptions.Compiled |
+                    (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
+                    (multiline ? 0 : RegexOptions.Singleline)
+                );
+            }
+            catch (Exception e)
+            {
+                var ex = new RegExException(e.Message, e);
+                throw ex;
+            }
         }
 
         var result = new ConcurrentBag<BookmarkSearchResult>();
