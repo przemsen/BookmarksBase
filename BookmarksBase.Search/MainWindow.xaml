@@ -8,7 +8,7 @@
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
     x:Name="MainWin"
     Title="BookmarksBase Search"
-    Width="800"
+    Width="820"
     Height="600"
     Closing="MainWin_Closing"
     Icon="icon.ico"
@@ -130,7 +130,7 @@
                 <ListView.Resources>
                     <GridViewColumn
                         x:Key="UrlGridViewColumn"
-                        Width="620"
+                        Width="640"
                         x:Shared="false"
                         Header="URL">
                         <GridViewColumn.CellTemplate>
