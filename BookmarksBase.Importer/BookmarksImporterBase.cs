@@ -33,7 +33,8 @@ abstract class BookmarksImporterBase : IDisposable
         int LimitOfQueriedBookmarks,
         int SkipQueriedBookmarks,
         IEnumerable<string> ExceptionalUrls,
-        string UserAgent
+        string UserAgent,
+        string TempDir
     );
 
     public record DownloadResult(
@@ -99,6 +100,7 @@ abstract class BookmarksImporterBase : IDisposable
         string downloadedFileName = null;
         var httpClient = _httpClientFactory.CreateClient(DEFAULTHTTPCLIENT);
         await Task.Delay(_random.Next(1000, 3000)).ConfigureAwait(false);
+        bool isSuccess = true;
 
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
         {
@@ -136,6 +138,7 @@ abstract class BookmarksImporterBase : IDisposable
             }
             catch (HttpRequestException hre)
             {
+                isSuccess = false;
                 if (hre.StatusCode is not null)
                 {
                     lock (_lck)
@@ -175,6 +178,7 @@ abstract class BookmarksImporterBase : IDisposable
             }
             catch (Exception e)
             {
+                isSuccess = false;
                 lock (_lck)
                 {
                     if (e.InnerException is TimeoutException)
@@ -200,24 +204,21 @@ abstract class BookmarksImporterBase : IDisposable
             {
                 _throttler.Release();
             }
-
         }
 
-        return new DownloadResult(DownloadedFileName: downloadedFileName, null, IsSuccess: true);
+        return new DownloadResult(DownloadedFileName: downloadedFileName, null, IsSuccess: isSuccess);
     }
 
     public long? SaveRenderedContents(DownloadResult downloadResult)
     {
-        if (downloadResult.IsSuccess is false)
-        {
-            return null;
-        }
-
         long? ret = null;
-
         if (downloadResult.ContentsIfProblem is not null)
         {
             ret = _storage.SaveContents(downloadResult.ContentsIfProblem);
+        }
+        else if (downloadResult.IsSuccess is false)
+        {
+            return null;
         }
         else
         {
@@ -288,9 +289,9 @@ abstract class BookmarksImporterBase : IDisposable
 
         foreach (var tb in taskBookmarkPairs)
         {
-            if (tb.Task.Result == null)
+            if (tb.Task.Result is null)
             {
-                tb.Bookmark.Title += " (erroneous)";
+                tb.Bookmark.Title = $"{tb.Bookmark.Title} (erroneous)";
             }
             else
             {
@@ -351,7 +352,15 @@ abstract class BookmarksImporterBase : IDisposable
         }
     }
 
-    private static string GenerateTempFileName() => $"{Guid.NewGuid()}.htm";
+    private string GenerateTempFileName()
+    {
+        if (!string.IsNullOrEmpty(_options.TempDir))
+        {
+            return Path.Combine(_options.TempDir, $"{Guid.NewGuid()}.htm");
+        }
+
+        return $"{Guid.NewGuid()}.htm";
+    }
 
     private static void AssertLynxDependencies()
     {

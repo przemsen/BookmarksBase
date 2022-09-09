@@ -81,7 +81,8 @@ static class Program
             LimitOfQueriedBookmarks: settingsGeneral.LimitOfQueriedBookmarks,
             SkipQueriedBookmarks: settingsGeneral.SkipQueriedBookmarks,
             ExceptionalUrls: settingsDownloader.ExceptionalUrls,
-            UserAgent: settingsDownloader.UserAgent
+            UserAgent: settingsDownloader.UserAgent,
+            TempDir: settingsDownloader.TempDir
         );
 
         try

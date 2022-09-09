@@ -7,6 +7,7 @@ class DownloaderSettings
     public string UserAgent { get; set; }
     public int Timeout { get; set; }
     public IEnumerable<string> ExceptionalUrls { get; set; }
+    public string TempDir { get; set; }
 }
 
 class GeneralSettings
