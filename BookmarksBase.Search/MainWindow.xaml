@@ -46,7 +46,8 @@
                 Padding="0,4,0,0"
                 AcceptsReturn="False"
                 IsUndoEnabled="False"
-                TabIndex="1" />
+                KeyDown="UrlLst_KeyDown"
+                TabIndex="0" />
 
             <Button
                 Name="DoSearchButton"
@@ -59,7 +60,7 @@
                 Background="Transparent"
                 BorderThickness="0,0,0,0"
                 Click="DoSearchButton_Click"
-                TabIndex="2">
+                IsTabStop="False">
                 <Image Source="searchicon.png" />
             </Button>
 
@@ -112,17 +113,17 @@
                 Grid.Row="0"
                 Grid.ColumnSpan="2"
                 Margin="0,4,0,0"
-                Focusable="False"
+                Focusable="True"
                 FontSize="13"
                 Foreground="#FF060672"
                 IsSynchronizedWithCurrentItem="True"
                 IsTabStop="True"
+                TabIndex="1"
                 MouseDoubleClick="UrlLst_MouseDoubleClick"
                 PreviewKeyDown="UrlLst_PreviewKeyDown"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.IsDeferredScrollingEnabled="True"
                 SelectionChanged="UrlLst_SelectionChanged"
-                TabIndex="3"
                 VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                 VirtualizingPanel.VirtualizationMode="Recycling">

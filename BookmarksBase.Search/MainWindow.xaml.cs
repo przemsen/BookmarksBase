@@ -168,8 +168,21 @@ public partial class MainWindow : Window
         {
             return;
         }
-
         await DoSearch();
+    }
+
+    private async void UrlLst_KeyDown(object sender, KeyEventArgs e)
+    {
+        await Dispatcher.InvokeAsync(async () =>
+            {
+
+                if (e.Key == Key.Enter)
+                {
+                    await DoSearch();
+                }
+
+            }, System.Windows.Threading.DispatcherPriority.ApplicationIdle
+        );
     }
 
     //-------------------------------------------------------------------------
@@ -368,7 +381,7 @@ public partial class MainWindow : Window
         finally
         {
             stopWatch.Stop();
-            StatusTxt.Text = $"Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
+            StatusTxt.Text = $"Input: ⟨ {GetFindTxtText()} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
     }
 
@@ -433,6 +446,7 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
 }
 
 //-------------------------------------------------------------------------
