@@ -133,6 +133,7 @@ abstract class BookmarksImporterBase : IDisposable
 
                 downloadedFileName = GenerateTempFileName();
                 File.WriteAllText(downloadedFileName, httpResponseString, Encoding.UTF8);
+                isSuccess = true;
 
                 break;
             }
