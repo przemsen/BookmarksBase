@@ -285,7 +285,7 @@ public partial class MainWindow : Window
         (
             GetFindTxtText()
                 .ToLower(Thread.CurrentThread.CurrentCulture)
-                .StartsWith("help:", StringComparison.CurrentCulture)
+                .StartsWith(BookmarksBaseSearchEngine.KeywordsList[2], StringComparison.CurrentCulture)
 
             ||
 

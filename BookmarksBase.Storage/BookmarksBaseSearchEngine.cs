@@ -21,18 +21,18 @@ casesens:   -- makes search case sensitive
 help: or ?  -- displays this text
 inurl:      -- searches only in the urls
 intitle:    -- searches only in the titles
-multiline:  -- default grep behaviour, analyzes line by line
+singleline: -- treats whole text as one big line (affects performance)
 err:        -- search for erroneous bookmarks
 ";
 
     public static readonly string[] KeywordsList = new[]
     {
-        "all:",
+        "all:",         // 0
         "casesens:",
         "help:",
         "inurl:",
         "intitle:",
-        "multiline:",
+        "singleline:",  // 5
         "err:"
     };
 
@@ -45,7 +45,7 @@ err:        -- search for erroneous bookmarks
     public IReadOnlyCollection<BookmarkSearchResult> DoSearch(string pattern)
     {
         if (
-            pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("all:", StringComparison.CurrentCulture)
+            pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[0], StringComparison.CurrentCulture)
             || string.IsNullOrEmpty(pattern)
         )
         {
@@ -54,36 +54,36 @@ err:        -- search for erroneous bookmarks
             ).ToArray();
         }
 
-        bool inurl = false, caseSensitive = false, intitle = false, multiline = false;
+        bool inurl = false, caseSensitive = false, intitle = false, singleLine = false;
         Regex regex = null;
         pattern = SanitizePattern(pattern);
 
-        if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("inurl:", StringComparison.CurrentCulture))
+        if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[3], StringComparison.CurrentCulture))
         {
             inurl = true;
             pattern = pattern[6..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("casesens:", StringComparison.CurrentCulture))
+        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[1], StringComparison.CurrentCulture))
         {
             caseSensitive = true;
             pattern = pattern[9..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("multiline:", StringComparison.CurrentCulture))
+        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[5], StringComparison.CurrentCulture))
         {
-            multiline = true;
+            singleLine = true;
             pattern = pattern[10..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("intitle:", StringComparison.CurrentCulture))
+        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[4], StringComparison.CurrentCulture))
         {
             intitle = true;
             pattern = pattern[8..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith("err:", StringComparison.CurrentCulture))
+        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[6], StringComparison.CurrentCulture))
         {
             regex = regex = new Regex(
                 @" \(erroneous\)$",
                 RegexOptions.Compiled |
-                RegexOptions.Singleline
+                RegexOptions.Multiline
             );
             intitle = true;
         }
@@ -96,7 +96,7 @@ err:        -- search for erroneous bookmarks
                     pattern,
                     RegexOptions.Compiled |
                     (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
-                    (multiline ? 0 : RegexOptions.Singleline)
+                    (singleLine ? RegexOptions.Singleline : RegexOptions.Multiline)
                 );
             }
             catch (Exception e)
