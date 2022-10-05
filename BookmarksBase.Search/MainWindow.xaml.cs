@@ -113,7 +113,6 @@ public partial class MainWindow : Window
 
             Process.Start(new ProcessStartInfo { UseShellExecute = true, FileName = currentBookmark.Url });
         }
-
     }
 
     private void UrlLst_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -393,10 +392,10 @@ public partial class MainWindow : Window
             currentBookmark.SiteContentsId is long siteContentsId
         )
         {
+            ResultsRichTxt.ScrollToHome();
             var fullContent = currentBookmark.FullContent ?? _storage.LoadContents(siteContentsId);
             ResultsFlowDocument.Blocks.Clear();
             ResultsFlowDocument.Blocks.Add(new Paragraph(new Run(fullContent)));
-            ResultsRichTxt.ScrollToHome();
 
             MatchCountTextBlock.Visibility = Visibility.Hidden;
             NextMatchButton.Visibility = Visibility.Hidden;
@@ -459,6 +458,41 @@ public class MatchCountToFontSizeConverter : IValueConverter
         >= 3 and < 5 => 10,
         _ => 8
     };
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
+}
+
+public class TitleToImageSourceConverter : IValueConverter
+{
+    private static readonly Uri _starUri = new Uri("star.png", UriKind.Relative);
+    private static readonly Uri _rstarUri = new Uri("rstar.png", UriKind.Relative);
+    private static readonly Uri _gstarUri = new Uri("gstar.png", UriKind.Relative);
+    private static readonly Uri _bstarUri = new Uri("bstar.png", UriKind.Relative);
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value switch
+        {
+            string s when s[^1] == '*' => _starUri,
+            string s when s[^2..] == "*r" => _rstarUri,
+            string s when s[^2..] == "*g" => _gstarUri,
+            string s when s[^2..] == "*b" => _bstarUri,
+            _ => null
+        };
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
+}
+
+public class TitleToImageVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value switch
+        {
+            string s when s[^1] == '*' => Visibility.Visible,
+            string s when s[^2..] == "*r" => Visibility.Visible,
+            string s when s[^2..] == "*g" => Visibility.Visible,
+            string s when s[^2..] == "*b" => Visibility.Visible,
+            _ => Visibility.Collapsed,
+        };
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
 }
