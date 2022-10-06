@@ -34,7 +34,8 @@ abstract class BookmarksImporterBase : IDisposable
         int SkipQueriedBookmarks,
         IEnumerable<string> ExceptionalUrls,
         string UserAgent,
-        string TempDir
+        string TempDir,
+        Dictionary<string, string> Cookies
     );
 
     public record DownloadResult(
@@ -110,7 +111,25 @@ abstract class BookmarksImporterBase : IDisposable
                 await _throttler.WaitAsync();
                 Trace.WriteLine($"{GetDateTime()} - Starting: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
 
-                var httpResponse = await httpClient.GetAsync(url);
+                HttpResponseMessage httpResponse = null;
+
+                var jsonReadyKey = url.Replace(":", string.Empty);
+                if (_options.Cookies.ContainsKey(jsonReadyKey))
+                {
+                    var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+
+                    foreach (var header in httpClient.DefaultRequestHeaders)
+                    {
+                        requestMessage.Headers.Add(header.Key, header.Value);
+                    }
+                    requestMessage.Headers.Add("Cookie", _options.Cookies[jsonReadyKey]);
+
+                    httpResponse = await httpClient.SendAsync(requestMessage);
+                }
+                else
+                {
+                    httpResponse = await httpClient.GetAsync(url);
+                }
 
                 Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
                 if

@@ -18,4 +18,5 @@ class GeneralSettings
     public bool BackupExistingDatabaseToZip { get; set; }
     public bool ConsoleReadKeyAtTheEnd { get; set; }
     public string DatabaseFileName { get; set; }
+    public Dictionary<string, string> Cookies { get; set; }
 }

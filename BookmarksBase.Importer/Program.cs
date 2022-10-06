@@ -82,7 +82,8 @@ static class Program
             SkipQueriedBookmarks: settingsGeneral.SkipQueriedBookmarks,
             ExceptionalUrls: settingsDownloader.ExceptionalUrls,
             UserAgent: settingsDownloader.UserAgent,
-            TempDir: settingsDownloader.TempDir
+            TempDir: settingsDownloader.TempDir,
+            Cookies: settingsGeneral.Cookies
         );
 
         try
