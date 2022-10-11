@@ -83,6 +83,9 @@
                     <CheckBox x:Name="GroupedViewCheckBox" IsChecked="False">
                         Folder grouping
                     </CheckBox>
+                    <CheckBox x:Name="SwitchUrlTitleCheckBox" IsChecked="False">
+                        Switch Url/Title
+                    </CheckBox>
                 </ContextMenu>
             </TextBox.ContextMenu>
 
@@ -134,8 +137,20 @@
                     <GridViewColumn
                         x:Key="UrlGridViewColumn"
                         Width="640"
-                        x:Shared="false"
-                        Header="URL">
+                        x:Shared="false">
+
+                        <GridViewColumn.HeaderContainerStyle>
+                            <Style TargetType="{x:Type GridViewColumnHeader}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="True">
+                                        <Setter Property="Content" Value="Title" />
+                                    </DataTrigger><DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="False">
+                                        <Setter Property="Content" Value="Url" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </GridViewColumn.HeaderContainerStyle>
+
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -145,15 +160,18 @@
                                         Source="{Binding Title, Mode=OneWay, Converter={StaticResource TitleToImageSourceConverter}}"
                                         Stretch="Fill"
                                         Visibility="{Binding Title, Mode=OneWay, Converter={StaticResource TitleToImageVisibilityConverter}}" />
-                                    <TextBlock
-                                        Name="UrlTextBlock"
-                                        Margin="0,2,0,2"
-                                        Text="{Binding Url, Mode=OneWay}">
+                                    <TextBlock Name="UrlTextBlock" Margin="0,2,0,2">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Path=WhatMatched}" Value="Url">
                                                         <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="True">
+                                                        <Setter Property="Text" Value="{Binding Title}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="False">
+                                                        <Setter Property="Text" Value="{Binding Url}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

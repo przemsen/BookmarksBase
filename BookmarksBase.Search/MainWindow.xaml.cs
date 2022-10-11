@@ -130,7 +130,15 @@ public partial class MainWindow : Window
     {
         if (UrlLst.SelectedItem is BookmarkSearchResult b)
         {
-            TitleTxt.Text = b.Title;
+            if (SwitchUrlTitleCheckBox.IsChecked is true)
+            {
+                TitleTxt.Text = b.Url;
+            }
+            else
+            {
+                TitleTxt.Text = b.Title;
+            }
+
             RenderBookmarkContents(b);
         }
     }
