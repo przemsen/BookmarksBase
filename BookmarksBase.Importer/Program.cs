@@ -83,7 +83,9 @@ static class Program
             ExceptionalUrls: settingsDownloader.ExceptionalUrls,
             UserAgent: settingsDownloader.UserAgent,
             TempDir: settingsDownloader.TempDir,
-            Cookies: settingsGeneral.Cookies
+            CookieStealings: settingsGeneral.CookieStealings.Select(
+                x => new BookmarksImporterBase.StealCookie(x.ForUrl, x.WhereHostRLike)
+            )
         );
 
         try
@@ -116,6 +118,7 @@ static class Program
                         Title = "Title"
                     }
                 ).ToList();
+                fbi.GetCookies();
             }
             else
             {
@@ -131,6 +134,7 @@ static class Program
                 };
 
                 bookmarks = fbi.GetBookmarks(initialCount);
+                fbi.GetCookies();
                 new BookmarksJsonExporter(bookmarks).WriteJson();
             }
 

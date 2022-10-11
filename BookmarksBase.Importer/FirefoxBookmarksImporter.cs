@@ -11,6 +11,7 @@ namespace BookmarksBase.Importer;
 
 class FirefoxBookmarksImporter : BookmarksImporterBase
 {
+
     public FirefoxBookmarksImporter(
         BookmarksImporterBase.Options options,
         Storage.BookmarksBaseStorageService storage,
@@ -22,7 +23,7 @@ class FirefoxBookmarksImporter : BookmarksImporterBase
 
     public override int GetBookmarksCount()
     {
-        var dbFilePath = GetFirefoxBookmarksFile();
+        var dbFilePath = GetBookmarksDatabaseFilePath();
         var connStr = $"Data Source={dbFilePath}; Mode=ReadOnly;";
 
         using var con = new SqliteConnection(connStr);
@@ -38,7 +39,7 @@ class FirefoxBookmarksImporter : BookmarksImporterBase
 
     public override IEnumerable<Storage.Bookmark> GetBookmarks(int initialCount = DEFAULT_BOOKMARKS_LIST_CAPACITY)
     {
-        string dbFile = GetFirefoxBookmarksFile();
+        string dbFile = GetBookmarksDatabaseFilePath();
         if (dbFile.Length == 0)
         {
             Trace.WriteLine("Firefox bookmarks file has not been found <br />");
@@ -89,7 +90,51 @@ class FirefoxBookmarksImporter : BookmarksImporterBase
         return list.OrderByDescending(b => b.DateAdded).ToArray();
     }
 
-    private static string GetFirefoxBookmarksFile()
+    public override void GetCookies()
+    {
+        var cookiesDbFileFile = GetCookiesDatabaseFilePath();
+        if (cookiesDbFileFile.Length == 0)
+        {
+            Trace.WriteLine("Firefox cookies file has not been found <br />");
+            return;
+        }
+        Trace.WriteLine("Firefox cookies file found: " + cookiesDbFileFile + " <br />");
+        string cs = $"Data Source={cookiesDbFileFile}; Mode=ReadOnly;";
+
+        using var con = new SqliteConnection(cs);
+        con.Open();
+
+        foreach (var stealCookies in _options.CookieStealings)
+        {
+            const string hostParamName = "@host";
+            using var cmd = new SqliteCommand($"select name, value from moz_cookies where host like {hostParamName}", con);
+            cmd.Parameters.Add(new SqliteParameter($"{hostParamName}", $"%{stealCookies.WhereHostRLike}"));
+            using var rdr = cmd.ExecuteReader();
+            string value = string.Empty;
+
+            while (rdr.Read())
+            {
+                value = $"{value}{rdr.GetString(0)}={rdr.GetString(1)}; ";
+            }
+
+            if (value != String.Empty)
+            {
+                _cookies[stealCookies] = value;
+                Trace.WriteLine($"Cookie stolen for: {stealCookies.ForUrl} <br />");
+            }
+            else
+            {
+                Trace.WriteLine($"Cookie requested, but not found in query results for: {stealCookies.ForUrl} <br />");
+            }
+
+        }
+    }
+
+    private static string GetBookmarksDatabaseFilePath() => Path.Combine(GetGetProfilePath(), "places.sqlite");
+
+    private static string GetCookiesDatabaseFilePath() => Path.Combine(GetGetProfilePath(), "cookies.sqlite");
+
+    private static string GetGetProfilePath()
     {
         string apppath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         string mozilla = Path.Combine(apppath, "Mozilla");
@@ -111,8 +156,7 @@ class FirefoxBookmarksImporter : BookmarksImporterBase
                     string[] lines = resp.Split(new string[] { "\r\n" }, StringSplitOptions.None);
                     string location = lines.First(x => x.Contains("Path=")).Split(new string[] { "=" }, StringSplitOptions.None)[1];
                     location = location.Replace('/', '\\');
-                    string prof_dir = Path.Combine(firefox, location);
-                    return Path.Combine(prof_dir, "places.sqlite");
+                    return Path.Combine(firefox, location);
                 }
             }
         }

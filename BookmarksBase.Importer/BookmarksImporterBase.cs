@@ -24,7 +24,9 @@ abstract class BookmarksImporterBase : IDisposable
     private readonly Random _random = new ();
     private readonly SemaphoreSlim _throttler;
     private readonly IHttpClientFactory _httpClientFactory;
+    protected Dictionary<StealCookie, string> _cookies = new();
 
+    public abstract void GetCookies();
     public abstract IEnumerable<Bookmark> GetBookmarks(int initialCount = DEFAULT_BOOKMARKS_LIST_CAPACITY);
     public abstract int GetBookmarksCount();
 
@@ -35,7 +37,7 @@ abstract class BookmarksImporterBase : IDisposable
         IEnumerable<string> ExceptionalUrls,
         string UserAgent,
         string TempDir,
-        Dictionary<string, string> Cookies
+        IEnumerable<StealCookie> CookieStealings
     );
 
     public record DownloadResult(
@@ -43,6 +45,8 @@ abstract class BookmarksImporterBase : IDisposable
         string ContentsIfProblem,
         bool IsSuccess
     );
+
+    public record StealCookie(string ForUrl, string WhereHostRLike);
 
     protected BookmarksImporterBase(Options options, BookmarksBaseStorageService storage, IHttpClientFactory httpClientFactory)
     {
@@ -113,8 +117,8 @@ abstract class BookmarksImporterBase : IDisposable
 
                 HttpResponseMessage httpResponse = null;
 
-                var jsonReadyKey = url.Replace(":", string.Empty);
-                if (_options.Cookies.ContainsKey(jsonReadyKey))
+                var cookiesKey = _cookies.Keys.SingleOrDefault(x => x.ForUrl == url);
+                if (cookiesKey is not null)
                 {
                     var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -122,7 +126,7 @@ abstract class BookmarksImporterBase : IDisposable
                     {
                         requestMessage.Headers.Add(header.Key, header.Value);
                     }
-                    requestMessage.Headers.Add("Cookie", _options.Cookies[jsonReadyKey]);
+                    requestMessage.Headers.Add("Cookie", _cookies[cookiesKey]);
 
                     httpResponse = await httpClient.SendAsync(requestMessage);
                 }
