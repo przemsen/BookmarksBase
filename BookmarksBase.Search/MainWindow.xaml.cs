@@ -245,17 +245,13 @@ public partial class MainWindow : Window
 
         Rect screenPos = ResultsRichTxt.Selection.Start.GetCharacterRect(LogicalDirection.Forward);
         double offset = screenPos.Top + ResultsRichTxt.VerticalOffset;
-        ResultsRichTxt.ScrollToVerticalOffset(offset - ResultsRichTxt.ActualHeight / 2);
+        ResultsRichTxt.ScrollToVerticalOffset(offset - (ResultsRichTxt.ActualHeight / 2));
     }
 
     private TextRange _findTxtContentsTextRange = null;
     private string GetFindTxtText()
     {
-        if (_findTxtContentsTextRange is null)
-        {
-            _findTxtContentsTextRange = new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
-        }
-
+        _findTxtContentsTextRange ??= new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
         return _findTxtContentsTextRange.Text.TrimEnd();
     }
 
@@ -472,10 +468,10 @@ public class MatchCountToFontSizeConverter : IValueConverter
 
 public class TitleToImageSourceConverter : IValueConverter
 {
-    private static readonly Uri _starUri = new Uri("star.png", UriKind.Relative);
-    private static readonly Uri _rstarUri = new Uri("rstar.png", UriKind.Relative);
-    private static readonly Uri _gstarUri = new Uri("gstar.png", UriKind.Relative);
-    private static readonly Uri _bstarUri = new Uri("bstar.png", UriKind.Relative);
+    private static readonly Uri _starUri = new ("star.png", UriKind.Relative);
+    private static readonly Uri _rstarUri = new ("rstar.png", UriKind.Relative);
+    private static readonly Uri _gstarUri = new ("gstar.png", UriKind.Relative);
+    private static readonly Uri _bstarUri = new ("bstar.png", UriKind.Relative);
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         value switch

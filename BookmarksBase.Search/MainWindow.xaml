@@ -91,15 +91,24 @@
 
             <TextBox.Style>
                 <Style TargetType="TextBox">
-
                     <Setter Property="Background" Value="#FFF3FDFF" />
-
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Path=ItemsSource/WhatMatched, ElementName=UrlLst, Mode=OneWay}" Value="Title">
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox}" Value="False" />
+                                <Condition Binding="{Binding Path=ItemsSource/WhatMatched, ElementName=UrlLst}" Value="Title" />
+                            </MultiDataTrigger.Conditions>
                             <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
-                        </DataTrigger>
-                    </Style.Triggers>
+                        </MultiDataTrigger>
 
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox}" Value="True" />
+                                <Condition Binding="{Binding Path=ItemsSource/WhatMatched, ElementName=UrlLst}" Value="Url" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
                 </Style>
             </TextBox.Style>
 
@@ -144,7 +153,9 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="True">
                                         <Setter Property="Content" Value="Title" />
-                                    </DataTrigger><DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="False">
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="False">
                                         <Setter Property="Content" Value="Url" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -164,12 +175,26 @@
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Path=WhatMatched}" Value="Url">
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox}" Value="False" />
+                                                            <Condition Binding="{Binding WhatMatched}" Value="Url" />
+                                                        </MultiDataTrigger.Conditions>
                                                         <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
-                                                    </DataTrigger>
+                                                    </MultiDataTrigger>
+
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox}" Value="True" />
+                                                            <Condition Binding="{Binding WhatMatched}" Value="Title" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Background" Value="{DynamicResource HighlightBrush}" />
+                                                    </MultiDataTrigger>
+
                                                     <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="True">
                                                         <Setter Property="Text" Value="{Binding Title}" />
                                                     </DataTrigger>
+
                                                     <DataTrigger Binding="{Binding IsChecked, ElementName=SwitchUrlTitleCheckBox, Mode=OneWay}" Value="False">
                                                         <Setter Property="Text" Value="{Binding Url}" />
                                                     </DataTrigger>
