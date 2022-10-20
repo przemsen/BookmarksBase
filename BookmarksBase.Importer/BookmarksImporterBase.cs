@@ -117,7 +117,7 @@ abstract class BookmarksImporterBase : IDisposable
 
                 HttpResponseMessage httpResponse = null;
 
-                var cookiesKey = _cookies.Keys.SingleOrDefault(x => x.ForUrl == url);
+                var cookiesKey = _cookies.Keys.SingleOrDefault(x => url.StartsWith(x.ForUrl));
                 if (cookiesKey is not null)
                 {
                     var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
