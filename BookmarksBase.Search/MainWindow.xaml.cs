@@ -31,6 +31,8 @@ public partial class MainWindow : Window
     private readonly Brush _highlightBrush;
     private readonly Paragraph _helpMessageParagraph;
 
+    private readonly Run _findTxtRun;
+
     private List<Run> _highlightedRuns;
     private List<Run>.Enumerator _highlightedRunsEnumerator;
 
@@ -77,6 +79,9 @@ public partial class MainWindow : Window
                 };
 
             _helpMessageParagraph = new Paragraph(helpRun);
+
+            _findTxtRun = new Run();
+            ((Paragraph)FindTxt.Document.Blocks.FirstBlock).Inlines.Add(_findTxtRun);
 
             ResultsFlowDocument.Blocks.Clear();
             ResultsFlowDocument.Blocks.Add(_helpMessageParagraph);
@@ -192,33 +197,81 @@ public partial class MainWindow : Window
         );
     }
 
+    private void SwitchUrlTitleCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
+    {
+        UrlLst_SelectionChanged(sender, null);
+    }
+
     //-------------------------------------------------------------------------
 
     #region Private methods, not event handlers
 
+    private bool _findTxtFirstRunDefaultFormatted;
+    private bool _findTxtSecondRunDefaultFormatted;
+    private bool _findTxtBeginChangeCalled;
     private void HighlightSearchKeywords()
     {
-        var tr = GetFindTxtTextRangeForText(BookmarksBaseSearchEngine.KeywordsList);
+        var (keywordTr, restTr) = GetFindTxtTextRangeForText(BookmarksBaseSearchEngine.KeywordsList);
 
-        FindTxt.BeginChange();
-
-        if (tr is null)
+        if (keywordTr is null)
         {
-            tr = new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
-            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
-            tr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Normal);
-            tr.ApplyPropertyValue(TextElement.FontFamilyProperty, SystemFonts.MessageFontFamily);
-            tr.ApplyPropertyValue(TextElement.FontSizeProperty, SystemFonts.MessageFontSize);
+            if (_findTxtFirstRunDefaultFormatted is false)
+            {
+                FindTxt.BeginChange();
+                _findTxtBeginChangeCalled = true;
+
+                _findTxtRun.Foreground = Brushes.Black;
+                _findTxtRun.FontWeight = FontWeights.Normal;
+
+                if (_findTxtRun.Text != string.Empty)
+                {
+                    _findTxtFirstRunDefaultFormatted = true;
+                }
+            }
+
+            if (_findTxtSecondRunDefaultFormatted is false && _findTxtRun.NextInline is Run _findTxtSecondRun)
+            {
+                if (_findTxtBeginChangeCalled is false)
+                {
+                    FindTxt.BeginChange();
+                    _findTxtBeginChangeCalled = true;
+                }
+
+                _findTxtSecondRun.Foreground = Brushes.Black;
+                _findTxtSecondRun.FontWeight = FontWeights.Normal;
+
+                if (_findTxtSecondRun.Text != string.Empty)
+                {
+                    _findTxtSecondRunDefaultFormatted = true;
+                }
+            }
+
+            if (_findTxtBeginChangeCalled)
+            {
+                FindTxt.EndChange();
+                _findTxtBeginChangeCalled = false;
+            }
         }
         else
         {
-            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.OrangeRed);
-            tr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Bold);
-            tr.ApplyPropertyValue(TextElement.FontFamilyProperty, new FontFamily("Consolas"));
-            tr.ApplyPropertyValue(TextElement.FontSizeProperty, 14d);
+
+            FindTxt.BeginChange();
+
+            // These formatting calls silently result in creating second Run
+
+            keywordTr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.OrangeRed);
+            keywordTr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Bold);
+
+            restTr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Black);
+            restTr.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Normal);
+
+            FindTxt.EndChange();
+
+            _findTxtFirstRunDefaultFormatted = false;
+            _findTxtSecondRunDefaultFormatted = false;
+
         }
 
-        FindTxt.EndChange();
     }
 
     private void DisplayInitialStatus(string creationDate, int count)
@@ -248,23 +301,15 @@ public partial class MainWindow : Window
         ResultsRichTxt.ScrollToVerticalOffset(offset - (ResultsRichTxt.ActualHeight / 2));
     }
 
-    private TextRange _findTxtContentsTextRange = null;
-    private string GetFindTxtText()
-    {
-        _findTxtContentsTextRange ??= new TextRange(FindTxt.Document.ContentStart, FindTxt.Document.ContentEnd);
-        return _findTxtContentsTextRange.Text.TrimEnd();
-    }
+    private string FindTxtText => $"{_findTxtRun.Text}{((Run)_findTxtRun?.NextInline)?.Text}";
 
-    private TextRange GetFindTxtTextRangeForText(string[] keywords)
+    private (TextRange keywordTr, TextRange restTr) GetFindTxtTextRangeForText(string[] keywords)
     {
-        var findTxtText = GetFindTxtText();
-        int foundIndexOf = 0;
         string foundKeyword = null;
 
         foreach (var k in keywords)
         {
-            foundIndexOf = findTxtText.IndexOf(k);
-            if (foundIndexOf >= 0)
+            if (FindTxtText.StartsWith(k))
             {
                 foundKeyword = k;
                 break;
@@ -273,12 +318,17 @@ public partial class MainWindow : Window
 
         if (foundKeyword is null)
         {
-            return null;
+            return (null, null);
         }
 
-        var startPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundIndexOf + 2);
-        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundIndexOf + foundKeyword.Length + 1);
-        return new TextRange(startPtr, endPtr);
+        var startPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(0);
+
+        // The 2 is probably because starting tags for Run and Paragraph also count
+        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundKeyword.Length + 2);
+
+        var restEndPtr = FindTxt.Document.ContentEnd;
+
+        return (new TextRange(startPtr, endPtr), new TextRange(endPtr, restEndPtr));
     }
 
     private async Task DoSearch()
@@ -286,13 +336,13 @@ public partial class MainWindow : Window
 
         if
         (
-            GetFindTxtText()
+            FindTxtText
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith(BookmarksBaseSearchEngine.KeywordsList[2], StringComparison.CurrentCulture)
 
             ||
 
-            GetFindTxtText()
+            FindTxtText
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith("?", System.StringComparison.CurrentCulture)
         )
@@ -311,7 +361,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var textToSearch = GetFindTxtText();
+            var textToSearch = FindTxtText;
             FindTxt.IsEnabled = false;
 
             var searchEngineStopWatch = Stopwatch.StartNew();
@@ -384,7 +434,7 @@ public partial class MainWindow : Window
         finally
         {
             stopWatch.Stop();
-            StatusTxt.Text = $"Input: ⟨ {GetFindTxtText()} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
+            StatusTxt.Text = $"Input: ⟨ {FindTxtText} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
     }
 
@@ -449,19 +499,19 @@ public partial class MainWindow : Window
     }
 
     #endregion
-
 }
 
 //-------------------------------------------------------------------------
 
 public class MatchCountToFontSizeConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
-    {
-        < 3 => 14,
-        >= 3 and < 5 => 10,
-        _ => 8
-    };
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value switch
+        {
+            < 3 => 14,
+            >= 3 and < 5 => 10,
+            _ => 8
+        };
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
 }

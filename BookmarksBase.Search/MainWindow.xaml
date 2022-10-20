@@ -83,7 +83,11 @@
                     <CheckBox x:Name="GroupedViewCheckBox" IsChecked="False">
                         Folder grouping
                     </CheckBox>
-                    <CheckBox x:Name="SwitchUrlTitleCheckBox" IsChecked="False">
+                    <CheckBox
+                        x:Name="SwitchUrlTitleCheckBox"
+                        Checked="SwitchUrlTitleCheckBox_CheckedChanged"
+                        IsChecked="False"
+                        Unchecked="SwitchUrlTitleCheckBox_CheckedChanged">
                         Switch Url/Title
                     </CheckBox>
                 </ContextMenu>
