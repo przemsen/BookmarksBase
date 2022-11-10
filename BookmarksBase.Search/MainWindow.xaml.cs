@@ -99,6 +99,8 @@ public partial class MainWindow : Window
 
         FindTxt.Focus();
 
+        DataObject.AddPastingHandler(FindTxt, new DataObjectPastingEventHandler(FindTxtPasting));
+
         Observable
             .FromEventPattern(FindTxt, "TextChanged")
             .Throttle(TimeSpan.FromSeconds(.2))
@@ -108,6 +110,13 @@ public partial class MainWindow : Window
     }
 
     //-------------------------------------------------------------------------
+
+    private void FindTxtPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        var pastingText = e.DataObject.GetData(DataFormats.Text) as string;
+        _findTxtRun.Text = pastingText;
+        e.CancelCommand();
+    }
 
     private void UrlLst_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
