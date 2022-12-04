@@ -83,7 +83,8 @@ err:        -- search for erroneous bookmarks
             regex = regex = new Regex(
                 @" \(erroneous\)$",
                 RegexOptions.Compiled |
-                RegexOptions.Multiline
+                RegexOptions.Multiline |
+                RegexOptions.NonBacktracking
             );
             intitle = true;
         }
@@ -94,6 +95,7 @@ err:        -- search for erroneous bookmarks
             {
                 regex = new Regex(
                     pattern,
+                    RegexOptions.NonBacktracking |
                     RegexOptions.Compiled |
                     (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
                     (singleLine ? RegexOptions.Singleline : RegexOptions.Multiline)

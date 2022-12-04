@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,11 +26,13 @@ namespace BookmarksBase.Search;
 public partial class MainWindow : Window
 {
     private const string ERROR_LOG_FILENAME = "search.error.log.txt";
+    private const int INITIAL_SEARCH_TEXT_STRINGBUILDER_CAPACITY = 50;
 
     private readonly BookmarksBaseStorageService _storage;
     private readonly BookmarksBaseSearchEngine _searchEngine;
     private readonly Brush _highlightBrush;
     private readonly Paragraph _helpMessageParagraph;
+    private readonly StringBuilder _findTxtSb = new(capacity: INITIAL_SEARCH_TEXT_STRINGBUILDER_CAPACITY);
 
     private readonly Run _findTxtRun;
 
@@ -310,7 +313,30 @@ public partial class MainWindow : Window
         ResultsRichTxt.ScrollToVerticalOffset(offset - (ResultsRichTxt.ActualHeight / 2));
     }
 
-    private string FindTxtText => $"{_findTxtRun.Text}{((Run)_findTxtRun?.NextInline)?.Text}";
+    private string FindTxtText()
+    {
+        // We have to detect case when user selected all and deleted
+        var start = FindTxt.Document.ContentStart;
+        var end = FindTxt.Document.ContentEnd;
+        int difference = start.GetOffsetToPosition(end);
+        if (difference == 0)
+        {
+            _findTxtRun.Text = null;
+            FindTxt.Document.Blocks.Add(new Paragraph(_findTxtRun));
+            return string.Empty;
+        }
+
+        _findTxtSb.Append(_findTxtRun?.Text);
+        Run nextInline = _findTxtRun?.NextInline as Run;
+        do
+        {
+            _findTxtSb.Append(nextInline?.Text);
+            nextInline = nextInline?.NextInline as Run;
+        } while (nextInline is not null);
+        var ret = _findTxtSb.ToString();
+        _findTxtSb.Clear();
+        return ret;
+    }
 
     private (TextRange keywordTr, TextRange restTr) GetFindTxtTextRangeForText(string[] keywords)
     {
@@ -318,7 +344,7 @@ public partial class MainWindow : Window
 
         foreach (var k in keywords)
         {
-            if (FindTxtText.StartsWith(k))
+            if (FindTxtText().StartsWith(k))
             {
                 foundKeyword = k;
                 break;
@@ -342,16 +368,17 @@ public partial class MainWindow : Window
 
     private async Task DoSearch()
     {
+        var textToSearch = FindTxtText();
 
         if
         (
-            FindTxtText
+            textToSearch
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith(BookmarksBaseSearchEngine.KeywordsList[2], StringComparison.CurrentCulture)
 
             ||
 
-            FindTxtText
+            textToSearch
                 .ToLower(Thread.CurrentThread.CurrentCulture)
                 .StartsWith("?", System.StringComparison.CurrentCulture)
         )
@@ -370,7 +397,6 @@ public partial class MainWindow : Window
 
         try
         {
-            var textToSearch = FindTxtText;
             FindTxt.IsEnabled = false;
 
             var searchEngineStopWatch = Stopwatch.StartNew();
@@ -407,7 +433,6 @@ public partial class MainWindow : Window
             }
             else
             {
-                FindTxt.IsEnabled = true;
                 UrlLst.Focus();
             }
             resultsCount = result.Count;
@@ -443,7 +468,9 @@ public partial class MainWindow : Window
         finally
         {
             stopWatch.Stop();
-            StatusTxt.Text = $"Input: ⟨ {FindTxtText} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
+            //GC.Collect(GC.MaxGeneration, GCCollectionMode.Default, blocking: true, compacting: true);
+            FindTxt.IsEnabled = true;
+            StatusTxt.Text = $"Input: ⟨ {FindTxtText()} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
     }
 
