@@ -117,7 +117,7 @@ public partial class MainWindow : Window
     private void FindTxtPasting(object sender, DataObjectPastingEventArgs e)
     {
         var pastingText = e.DataObject.GetData(DataFormats.Text) as string;
-        _findTxtRun.Text = pastingText;
+        _findTxtRun.Text = pastingText?.Trim();
         e.CancelCommand();
     }
 

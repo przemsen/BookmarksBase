@@ -47,9 +47,9 @@
                 Height="28"
                 Padding="0,4,0,0"
                 AcceptsReturn="False"
+                Focusable="True"
                 IsUndoEnabled="False"
                 KeyDown="UrlLst_KeyDown"
-                Focusable="True"
                 TabIndex="0" />
 
             <Button
