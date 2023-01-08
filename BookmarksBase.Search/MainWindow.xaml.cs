@@ -34,7 +34,8 @@ public partial class MainWindow : Window
     private readonly Paragraph _helpMessageParagraph;
     private readonly StringBuilder _findTxtSb = new(capacity: INITIAL_SEARCH_TEXT_STRINGBUILDER_CAPACITY);
 
-    private readonly Run _findTxtRun;
+    private Run _findTxtRun;
+    private Paragraph _findTxtParagraph;
 
     private List<Run> _highlightedRuns;
     private List<Run>.Enumerator _highlightedRunsEnumerator;
@@ -83,8 +84,10 @@ public partial class MainWindow : Window
 
             _helpMessageParagraph = new Paragraph(helpRun);
 
-            _findTxtRun = new Run();
-            ((Paragraph)FindTxt.Document.Blocks.FirstBlock).Inlines.Add(_findTxtRun);
+            _findTxtParagraph = (Paragraph)FindTxt.Document.Blocks.FirstBlock;
+            _findTxtRun = new Run(string.Empty);
+            _findTxtParagraph.Inlines.Clear();
+            _findTxtParagraph.Inlines.Add(_findTxtRun);
 
             ResultsFlowDocument.Blocks.Clear();
             ResultsFlowDocument.Blocks.Add(_helpMessageParagraph);
@@ -105,7 +108,10 @@ public partial class MainWindow : Window
         DataObject.AddPastingHandler(FindTxt, new DataObjectPastingEventHandler(FindTxtPasting));
 
         Observable
-            .FromEventPattern(FindTxt, "TextChanged")
+            .FromEventPattern<TextChangedEventHandler, TextChangedEventArgs>(
+                h => FindTxt.TextChanged += h,
+                h => FindTxt.TextChanged -= h
+            )
             .Throttle(TimeSpan.FromSeconds(.2))
             .ObserveOn(SynchronizationContext.Current)
             .Subscribe(_ => HighlightSearchKeywords())
@@ -117,7 +123,7 @@ public partial class MainWindow : Window
     private void FindTxtPasting(object sender, DataObjectPastingEventArgs e)
     {
         var pastingText = e.DataObject.GetData(DataFormats.Text) as string;
-        _findTxtRun.Text = pastingText?.Trim();
+        FindTxt.CaretPosition.InsertTextInRun(pastingText.Trim());
         e.CancelCommand();
     }
 
@@ -218,53 +224,21 @@ public partial class MainWindow : Window
 
     #region Private methods, not event handlers
 
-    private bool _findTxtFirstRunDefaultFormatted;
-    private bool _findTxtSecondRunDefaultFormatted;
-    private bool _findTxtBeginChangeCalled;
+    private bool _findTxtHasBeenColored;
     private void HighlightSearchKeywords()
     {
         var (keywordTr, restTr) = GetFindTxtTextRangeForText(BookmarksBaseSearchEngine.KeywordsList);
 
-        if (keywordTr is null)
+        if (keywordTr is null && _findTxtHasBeenColored is true)
         {
-            if (_findTxtFirstRunDefaultFormatted is false)
-            {
-                FindTxt.BeginChange();
-                _findTxtBeginChangeCalled = true;
-
-                _findTxtRun.Foreground = Brushes.Black;
-                _findTxtRun.FontWeight = FontWeights.Normal;
-
-                if (_findTxtRun.Text != string.Empty)
-                {
-                    _findTxtFirstRunDefaultFormatted = true;
-                }
-            }
-
-            if (_findTxtSecondRunDefaultFormatted is false && _findTxtRun.NextInline is Run _findTxtSecondRun)
-            {
-                if (_findTxtBeginChangeCalled is false)
-                {
-                    FindTxt.BeginChange();
-                    _findTxtBeginChangeCalled = true;
-                }
-
-                _findTxtSecondRun.Foreground = Brushes.Black;
-                _findTxtSecondRun.FontWeight = FontWeights.Normal;
-
-                if (_findTxtSecondRun.Text != string.Empty)
-                {
-                    _findTxtSecondRunDefaultFormatted = true;
-                }
-            }
-
-            if (_findTxtBeginChangeCalled)
-            {
-                FindTxt.EndChange();
-                _findTxtBeginChangeCalled = false;
-            }
+            var text = FindTxtText();
+            _findTxtRun = new Run(text);
+            _findTxtParagraph.Inlines.Clear();
+            _findTxtParagraph.Inlines.Add(_findTxtRun);
+            FindTxt.CaretPosition = FindTxt.CaretPosition.DocumentEnd;
+            _findTxtHasBeenColored = false;
         }
-        else
+        else if (keywordTr is not null)
         {
 
             FindTxt.BeginChange();
@@ -279,9 +253,7 @@ public partial class MainWindow : Window
 
             FindTxt.EndChange();
 
-            _findTxtFirstRunDefaultFormatted = false;
-            _findTxtSecondRunDefaultFormatted = false;
-
+            _findTxtHasBeenColored = true;
         }
 
     }
@@ -321,13 +293,14 @@ public partial class MainWindow : Window
         int difference = start.GetOffsetToPosition(end);
         if (difference == 0)
         {
-            _findTxtRun.Text = null;
-            FindTxt.Document.Blocks.Add(new Paragraph(_findTxtRun));
+            _findTxtRun = new Run();
+            _findTxtParagraph.Inlines.Clear();
+            _findTxtParagraph.Inlines.Add(_findTxtRun);
+            FindTxt.Document.Blocks.Add(_findTxtParagraph);
             return string.Empty;
         }
 
-        _findTxtSb.Append(_findTxtRun?.Text);
-        Run nextInline = _findTxtRun?.NextInline as Run;
+        Run nextInline = _findTxtParagraph.Inlines.FirstInline as Run;
         do
         {
             _findTxtSb.Append(nextInline?.Text);
@@ -341,10 +314,11 @@ public partial class MainWindow : Window
     private (TextRange keywordTr, TextRange restTr) GetFindTxtTextRangeForText(string[] keywords)
     {
         string foundKeyword = null;
+        var findTxtText = FindTxtText();
 
         foreach (var k in keywords)
         {
-            if (FindTxtText().StartsWith(k))
+            if (findTxtText.StartsWith(k))
             {
                 foundKeyword = k;
                 break;
@@ -358,8 +332,10 @@ public partial class MainWindow : Window
 
         var startPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(0);
 
-        // The 2 is probably because starting tags for Run and Paragraph also count
-        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundKeyword.Length + 2);
+        // The 2 is because starting tags for Run and Paragraph also count
+        // The multiplying is because sometimes there are spontaneous splits into multiple Runs, thus we
+        // have to be always prepared for many Runs
+        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundKeyword.Length + 2 * _findTxtParagraph.Inlines.Count);
 
         var restEndPtr = FindTxt.Document.ContentEnd;
 
