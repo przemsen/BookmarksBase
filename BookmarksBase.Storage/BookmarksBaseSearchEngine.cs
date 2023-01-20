@@ -109,7 +109,7 @@ err:        -- search for erroneous bookmarks
         }
 
         var result = new ConcurrentBag<BookmarkSearchResult>();
-        Parallel.ForEach(_loadedBookmarks, b =>
+        Parallel.ForEach(_loadedBookmarks, new ParallelOptions { MaxDegreeOfParallelism = 2 }, b =>
         {
             MatchCollection matchCollection;
             BookmarkSearchResult.MatchKind matchKind = BookmarkSearchResult.MatchKind.None;

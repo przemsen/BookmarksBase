@@ -263,10 +263,7 @@ public partial class MainWindow : Window
         var theAssembly = System.Reflection.Assembly.GetExecutingAssembly();
         var fvi = FileVersionInfo.GetVersionInfo(theAssembly.Location);
         var inforVersion = theAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-
-        this.Title += $" — Build {inforVersion}";
-        string status = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart}";
-        StatusTxt.Text = status;
+        StatusTxt.Text = $"Loaded {count} bookmarks, created at {creationDate}. Application version {fvi.FileMajorPart}.{fvi.FileMinorPart} build {inforVersion}";
     }
 
     private void IterateNextResultHighlight()
@@ -367,6 +364,7 @@ public partial class MainWindow : Window
         }
 
         ResultsFlowDocument.Blocks.Clear();
+        //Debug.WriteLine($"TryStartNoGCRegion: {GC.TryStartNoGCRegion(100_000_000)}");
         Stopwatch stopWatch = Stopwatch.StartNew();
         long searchEngineElapsedMs = 0L;
         int resultsCount = 0;
@@ -444,7 +442,7 @@ public partial class MainWindow : Window
         finally
         {
             stopWatch.Stop();
-            //GC.Collect(GC.MaxGeneration, GCCollectionMode.Default, blocking: true, compacting: true);
+            //GC.EndNoGCRegion();
             FindTxt.IsEnabled = true;
             StatusTxt.Text = $"Input: ⟨ {FindTxtText()} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }

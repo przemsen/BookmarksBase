@@ -21,6 +21,7 @@ public class BookmarksBaseStorageService : IDisposable
 
     private readonly object _lock;
     private readonly SqliteConnection _sqliteConnection;
+    private readonly SqliteConnection _sqliteConnectionInMemory;
     private bool disposedValue;
     private SqliteTransaction _transaction;
 
@@ -37,15 +38,10 @@ public class BookmarksBaseStorageService : IDisposable
             _sqliteConnection = new SqliteConnection(sqliteConnectionStringBuilder.ConnectionString);
             _sqliteConnection.Open();
 
-            const string dbPreparationSQL = "PRAGMA cache_size=5000";
-            using var cmd = _sqliteConnection.CreateCommand();
-            cmd.CommandText = dbPreparationSQL;
-            cmd.ExecuteNonQuery();
-
             const string detectOldVersionQuery = "select count(1) from pragma_table_info('Bookmark') where name = 'Folder'";
-            using var cmd2 = _sqliteConnection.CreateCommand();
-            cmd2.CommandText = detectOldVersionQuery;
-            if (cmd2.ExecuteScalar() is 1L)
+            using var cmd = _sqliteConnection.CreateCommand();
+            cmd.CommandText = detectOldVersionQuery;
+            if (cmd.ExecuteScalar() is 1L)
             {
                 CompatLevel = CompatibilityLevel.V3WithFolderNames;
             }
@@ -53,6 +49,10 @@ public class BookmarksBaseStorageService : IDisposable
             {
                 CompatLevel = CompatibilityLevel.V2WithoutFolderNames;
             }
+
+            _sqliteConnectionInMemory = new SqliteConnection("Data Source=WorkingSet;Mode=Memory;Cache=Shared");
+            _sqliteConnectionInMemory.Open();
+            _sqliteConnection.BackupDatabase(_sqliteConnectionInMemory);
 
             LoadBookmarksBase();
         }
@@ -71,7 +71,7 @@ public class BookmarksBaseStorageService : IDisposable
         const string selectSQLV3 = "select Url, Title, DateAdded, SiteContentsId, Folder from Bookmark;";
 
         var ret = new List<Bookmark>(2000);
-        var cmd = _sqliteConnection.CreateCommand();
+        var cmd = _sqliteConnectionInMemory.CreateCommand();
         cmd.CommandText = CompatLevel switch
         {
             CompatibilityLevel.V3WithFolderNames => selectSQLV3,
@@ -136,8 +136,9 @@ public class BookmarksBaseStorageService : IDisposable
     public string LoadContents(long siteContentsId)
     {
         string ret = null;
-        var cmd = _sqliteConnection.CreateCommand();
-        cmd.CommandText = $"select Text from SiteContents where Id = {siteContentsId};";
+        var cmd = _sqliteConnectionInMemory.CreateCommand();
+        cmd.Parameters.AddWithValue("id", siteContentsId);
+        cmd.CommandText = "select Text from SiteContents where Id = @id;";
         using var dataReader = cmd.ExecuteReader();
 
         if (dataReader.Read())
@@ -210,6 +211,7 @@ PRAGMA cache_size = 0;
             if (disposing)
             {
                 _sqliteConnection.Dispose();
+                _sqliteConnectionInMemory.Dispose();
             }
 
             disposedValue = true;
