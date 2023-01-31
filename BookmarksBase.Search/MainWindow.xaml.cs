@@ -383,13 +383,17 @@ public partial class MainWindow : Window
             searchEngineStopWatch.Stop();
             searchEngineElapsedMs = searchEngineStopWatch.ElapsedMilliseconds;
 
+            object firstResultToScroll = null;
+
             if (GroupedViewCheckBox.IsChecked is true)
             {
                 UrlLst.DataContext = result;
             }
             else
             {
-                UrlLst.DataContext = result.OrderByDescending(b => b.DateAdded).ToArray();
+                var sortedResult = result.OrderByDescending(b => b.DateAdded).ToArray();
+                UrlLst.DataContext = sortedResult;
+                firstResultToScroll = sortedResult switch { [var first, ..] => first, _ => null };
             }
 
             if (result.Count == 0)
@@ -407,6 +411,8 @@ public partial class MainWindow : Window
             }
             else
             {
+                UrlLst.SelectedIndex = 0;
+                UrlLst.ScrollIntoView(firstResultToScroll);
                 UrlLst.Focus();
             }
             resultsCount = result.Count;
