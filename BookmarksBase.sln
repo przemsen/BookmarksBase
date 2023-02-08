@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookmarksBase.Search", "Boo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookmarksBase.Storage", "BookmarksBase.Storage\BookmarksBase.Storage.csproj", "{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookmarksBase.Exporter", "BookmarksBase.Exporter\BookmarksBase.Exporter.csproj", "{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AEBE4AE5-3624-4C17-9236-9AD3FA164E93}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -34,10 +32,6 @@ Global
 		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1F00331-AFFA-4EB0-8DEE-ECA282BCAE0F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{047E4D7D-4DFC-4CB1-9C7F-B165B9BA2D72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
