@@ -3,6 +3,10 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <Nullable>disable</Nullable>
+
+        <!-- Do not produce pdb, but embed symbols instead. Allows for line numbers in stack traces -->
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
