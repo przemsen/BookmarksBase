@@ -56,7 +56,6 @@ err:        -- search for erroneous bookmarks
 
         bool inurl = false, caseSensitive = false, intitle = false, singleLine = false;
         Regex regex = null;
-        pattern = SanitizePattern(pattern);
 
         if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[3], StringComparison.CurrentCulture))
         {
@@ -164,16 +163,6 @@ err:        -- search for erroneous bookmarks
             }
         });
         return result;
-    }
-
-    private static string SanitizePattern(string pattern)
-    {
-        pattern = pattern.Replace("++", @"\+\+");
-        pattern = pattern.Replace("**", @"\*\*");
-        pattern = pattern.Replace("$$", @"\$\$");
-        pattern = pattern.Replace("##", @"\#\#");
-        pattern = pattern.Replace(" ", @"\s+");
-        return pattern;
     }
 
     public class RegExException : Exception
