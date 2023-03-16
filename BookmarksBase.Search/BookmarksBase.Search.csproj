@@ -6,6 +6,7 @@
         <TargetFramework>net7.0-windows</TargetFramework>
         <Nullable>disable</Nullable>
         <UseWPF>true</UseWPF>
+        <PublishReadyToRun>true</PublishReadyToRun>
 
         <!-- Do not produce pdb, but embed symbols instead. Allows for line numbers in stack traces -->
         <DebugSymbols>true</DebugSymbols>

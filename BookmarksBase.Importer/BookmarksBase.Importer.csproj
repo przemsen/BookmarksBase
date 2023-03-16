@@ -6,6 +6,7 @@
         <ApplicationIcon>Properties\icon.ico</ApplicationIcon>
         <PlatformTarget>x64</PlatformTarget>
         <OutputType>Exe</OutputType>
+        <PublishReadyToRun>true</PublishReadyToRun>
 
         <!-- Do not produce pdb, but embed symbols instead. Allows for line numbers in stack traces -->
         <DebugSymbols>true</DebugSymbols>
