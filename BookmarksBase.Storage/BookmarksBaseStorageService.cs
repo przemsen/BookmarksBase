@@ -211,7 +211,7 @@ PRAGMA cache_size = 0;
             if (disposing)
             {
                 _sqliteConnection.Dispose();
-                _sqliteConnectionInMemory.Dispose();
+                _sqliteConnectionInMemory?.Dispose();
             }
 
             disposedValue = true;

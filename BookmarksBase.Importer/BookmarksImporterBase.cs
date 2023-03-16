@@ -107,6 +107,11 @@ abstract class BookmarksImporterBase : IDisposable
         await Task.Delay(_random.Next(1000, 3000)).ConfigureAwait(false);
         bool isSuccess = true;
 
+        if (url.StartsWith("about:"))
+        {
+            return new DownloadResult(DownloadedFileName: null, ContentsIfProblem: "Site from \"about\" protocol", IsSuccess: false);
+        }
+
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
         {
             if (i > 0) await Task.Delay(_random.Next(4000, 6000)).ConfigureAwait(false);
