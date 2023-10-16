@@ -60,7 +60,8 @@ public partial class MainWindow : Window
 
             _storage = new BookmarksBaseStorageService(
                 BookmarksBaseStorageService.OperationMode.Reading,
-                theApp.Settings.DatabasePath
+                theApp.Settings.DatabasePath,
+                theApp.Settings.InMemoryMode
             );
 
             _searchEngine = new BookmarksBaseSearchEngine(

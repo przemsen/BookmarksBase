@@ -25,7 +25,9 @@ public class BookmarksBaseStorageService : IDisposable
     private bool disposedValue;
     private SqliteTransaction _transaction;
 
-    public BookmarksBaseStorageService(OperationMode op, string databaseFileName)
+    private SqliteConnection GetConnection() => _sqliteConnectionInMemory ?? _sqliteConnection;
+
+    public BookmarksBaseStorageService(OperationMode op, string databaseFileName, bool inMemoryMode)
     {
         if (op == OperationMode.Reading)
         {
@@ -50,9 +52,12 @@ public class BookmarksBaseStorageService : IDisposable
                 CompatLevel = CompatibilityLevel.V2WithoutFolderNames;
             }
 
-            _sqliteConnectionInMemory = new SqliteConnection("Data Source=WorkingSet;Mode=Memory;Cache=Shared");
-            _sqliteConnectionInMemory.Open();
-            _sqliteConnection.BackupDatabase(_sqliteConnectionInMemory);
+            if (inMemoryMode)
+            {
+                _sqliteConnectionInMemory = new SqliteConnection("Data Source=WorkingSet;Mode=Memory;Cache=Shared");
+                _sqliteConnectionInMemory.Open();
+                _sqliteConnection.BackupDatabase(_sqliteConnectionInMemory);
+            }
 
             LoadBookmarksBase();
         }
@@ -71,7 +76,7 @@ public class BookmarksBaseStorageService : IDisposable
         const string selectSQLV3 = "select Url, Title, DateAdded, SiteContentsId, Folder from Bookmark;";
 
         var ret = new List<Bookmark>(2000);
-        var cmd = _sqliteConnectionInMemory.CreateCommand();
+        var cmd = GetConnection().CreateCommand();
         cmd.CommandText = CompatLevel switch
         {
             CompatibilityLevel.V3WithFolderNames => selectSQLV3,
@@ -105,7 +110,7 @@ public class BookmarksBaseStorageService : IDisposable
     public void SaveBookmarksBase(IEnumerable<Bookmark> list)
     {
         const string insertSQL = "insert into Bookmark (Url, DateAdded, SiteContentsId, Title, Folder) values (@p0, @p1, @p2, @p3, @p4);";
-        using var insertCommand = new SqliteCommand(insertSQL, _sqliteConnection);
+        using var insertCommand = new SqliteCommand(insertSQL, GetConnection());
         insertCommand.Transaction = _transaction;
         foreach (var b in list)
         {
@@ -136,7 +141,7 @@ public class BookmarksBaseStorageService : IDisposable
     public string LoadContents(long siteContentsId)
     {
         string ret = null;
-        var cmd = _sqliteConnectionInMemory.CreateCommand();
+        var cmd = GetConnection().CreateCommand();
         cmd.Parameters.AddWithValue("id", siteContentsId);
         cmd.CommandText = "select Text from SiteContents where Id = @id;";
         using var dataReader = cmd.ExecuteReader();

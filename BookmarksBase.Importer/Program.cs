@@ -92,7 +92,8 @@ static class Program
         {
             storage = new BookmarksBaseStorageService(
                 BookmarksBaseStorageService.OperationMode.Writing,
-                settingsGeneral.DatabaseFileName
+                settingsGeneral.DatabaseFileName,
+                inMemoryMode: false
             );
             try
             {
