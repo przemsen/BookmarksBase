@@ -33,9 +33,11 @@ public class BookmarksBaseStorageService : IDisposable
         {
             LastModifiedOn = File.GetLastWriteTime(databaseFileName);
 
-            SqliteConnectionStringBuilder sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder();
-            sqliteConnectionStringBuilder.Mode = SqliteOpenMode.ReadOnly;
-            sqliteConnectionStringBuilder.DataSource = databaseFileName;
+            var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder
+            {
+                Mode = SqliteOpenMode.ReadOnly,
+                DataSource = databaseFileName
+            };
 
             _sqliteConnection = new SqliteConnection(sqliteConnectionStringBuilder.ConnectionString);
             _sqliteConnection.Open();
