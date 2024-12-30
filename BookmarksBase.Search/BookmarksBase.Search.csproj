@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="GitHashVersion.props" />
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net9.0-windows</TargetFramework>
         <Nullable>disable</Nullable>
         <UseWPF>true</UseWPF>
 
@@ -11,22 +10,27 @@
         <DebugSymbols>true</DebugSymbols>
         <DebugType>embedded</DebugType>
         <NoWarn>$(NoWarn)</NoWarn>
+        <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsPreviewNamespaces>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <CurrentDate>$([System.DateTime]::Now.ToString(yyyyMMddHHmm))</CurrentDate>
     </PropertyGroup>
 
     <PropertyGroup>
         <IncludeSourceRevisionInInformationalVersion>fasle</IncludeSourceRevisionInInformationalVersion>
-        <AssemblyVersion>3.0.0</AssemblyVersion>
-        <ProductVersion>3.0</ProductVersion>
-        <InformationalVersion>$(CurrentDate).$(GitHash)</InformationalVersion>
+        <AssemblyVersion>3.1.0</AssemblyVersion>
+        <ProductVersion>3.1</ProductVersion>
+        <InformationalVersion>$(CurrentDate)</InformationalVersion>
         <ProductName>BookmarksBase.Search</ProductName>
         <Company>Przemysław Seneczko</Company>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-        <PackageReference Include="System.Reactive" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.*" />
+        <PackageReference Include="System.Reactive" Version="*" />
     </ItemGroup>
 
     <PropertyGroup>

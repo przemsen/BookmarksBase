@@ -12,4 +12,8 @@ public class Bookmark
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public long? SiteContentsId { get; set; }
+
+    public override int GetHashCode() => Url.GetHashCode();
+    public override bool Equals(object obj) => obj is Bookmark other && Url == other.Url;
+
 }

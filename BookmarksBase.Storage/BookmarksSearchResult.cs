@@ -1,47 +1,39 @@
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace BookmarksBase.Storage;
 
-public class BookmarkSearchResult
+public class BookmarkSearchResult(
+    string url,
+    string title,
+    string dateAdded,
+    DateTime dateTimeAdded,
+    string folder,
+    long? contentsId,
+    BookmarkSearchResult.MatchKind matchKind,
+    MatchCollection matchCollection = null,
+    string fullContent = null
+)
 {
-    public BookmarkSearchResult(
-        string url,
-        string title,
-        string dateAdded,
-        string folder,
-        long? contentsId,
-        MatchKind matchKind,
-        MatchCollection matchCollection = null,
-        string fullContent = null
-    )
-    {
-        Url = url;
-        Title = title;
-        DateAdded = dateAdded;
-        Folder = folder;
-        SiteContentsId = contentsId;
-        MatchCollection = matchCollection;
-        FullContent = fullContent;
-        WhatMatched = matchKind;
-    }
-    public string Url { get; }
-    public string Title { get; }
-    public string FullContent { get; }
-    public string DateAdded { get; }
-    public string Folder { get; }
-    public long? SiteContentsId { get; }
-    public MatchCollection MatchCollection { get; }
-    public MatchKind WhatMatched { get; }
+    public string Url { get; } = url;
+    public string Title { get; } = title;
+    public string FullContent { get; } = fullContent;
+    public string DateAdded { get; } = dateAdded;
+    public DateTime DateTimeAdded { get; } = dateTimeAdded;
+    public string Folder { get; } = folder;
+    public long? SiteContentsId { get; } = contentsId;
+    public MatchCollection MatchCollection { get; } = matchCollection;
+    public MatchKind WhatMatched { get; } = matchKind;
     public IReadOnlyCollection<ContentFragment> GetContentFragments()
     {
-        var result = new List<ContentFragment>();
+        var result = new List<ContentFragment>(capacity: (MatchCollection.Count * 2) + 1);
 
         if (MatchCollection.Count > 0)
         {
             var firstFragment = new ContentFragment
             {
-                Fragment = FullContent.Substring(0, MatchCollection[0].Index),
+                Fragment = FullContent[..MatchCollection[0].Index],
                 IsHighlighted = false
             };
             result.Add(firstFragment);

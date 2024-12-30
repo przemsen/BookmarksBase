@@ -2,6 +2,7 @@ using BookmarksBase.Search.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
@@ -10,23 +11,21 @@ using System.Threading.Tasks;
 
 namespace BookmarksBase.Storage;
 
-public class BookmarksBaseSearchEngine
+public class BookmarksBaseSearchEngine(Func<long, string> loadContentsFunc, IReadOnlyCollection<Bookmark> loadedBookmarks)
 {
-    private readonly IReadOnlyCollection<Bookmark> _loadedBookmarks;
-    private readonly Func<long, string> _loadContentsFunc;
+    public const string HelpMessage = """
+    Available modifier keywords:
+    all:        -- loads all bookmarks sorted by date descending
+    casesens:   -- makes search case sensitive
+    help: or ?  -- displays this text
+    inurl:      -- searches only in the urls
+    intitle:    -- searches only in the titles
+    singleline: -- treats whole text as one big line (affects performance)
+    err:        -- search for erroneous bookmarks
+    """;
 
-    public const string HelpMessage = @"Available modifier keywords:
-all:        -- loads all bookmarks sorted by date descending
-casesens:   -- makes search case sensitive
-help: or ?  -- displays this text
-inurl:      -- searches only in the urls
-intitle:    -- searches only in the titles
-singleline: -- treats whole text as one big line (affects performance)
-err:        -- search for erroneous bookmarks
-";
-
-    public static readonly string[] KeywordsList = new[]
-    {
+    public static readonly ImmutableArray<string> KeywordsList =
+    [
         "all:",         // 0
         "casesens:",
         "help:",
@@ -34,55 +33,50 @@ err:        -- search for erroneous bookmarks
         "intitle:",
         "singleline:",  // 5
         "err:"
-    };
-
-    public BookmarksBaseSearchEngine(Expression<Func<long, string>> loadContentsFunc, IReadOnlyCollection<Bookmark> loadedBookmarks)
-    {
-        _loadContentsFunc = loadContentsFunc.Compile();
-        _loadedBookmarks = loadedBookmarks;
-    }
+    ];
 
     public IReadOnlyCollection<BookmarkSearchResult> DoSearch(string pattern)
     {
         if (
-            pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[0], StringComparison.CurrentCulture)
+            pattern.StartsWith(KeywordsList[0], StringComparison.Ordinal)
             || string.IsNullOrEmpty(pattern)
         )
         {
-            return _loadedBookmarks.Select(
-                b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
+            return loadedBookmarks.Select(
+                b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
             ).ToArray();
         }
 
         bool inurl = false, caseSensitive = false, intitle = false, singleLine = false;
         Regex regex = null;
 
-        if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[3], StringComparison.CurrentCulture))
+        if (pattern.StartsWith(KeywordsList[3], StringComparison.Ordinal))
         {
             inurl = true;
             pattern = pattern[6..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[1], StringComparison.CurrentCulture))
+        else if (pattern.StartsWith(KeywordsList[1], StringComparison.Ordinal))
         {
             caseSensitive = true;
             pattern = pattern[9..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[5], StringComparison.CurrentCulture))
+        else if (pattern.StartsWith(KeywordsList[5], StringComparison.Ordinal))
         {
             singleLine = true;
             pattern = pattern[10..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[4], StringComparison.CurrentCulture))
+        else if (pattern.StartsWith(KeywordsList[4], StringComparison.Ordinal))
         {
             intitle = true;
             pattern = pattern[8..];
         }
-        else if (pattern.ToLower(Thread.CurrentThread.CurrentCulture).StartsWith(KeywordsList[6], StringComparison.CurrentCulture))
+        else if (pattern.StartsWith(KeywordsList[6], StringComparison.Ordinal))
         {
             regex = regex = new Regex(
                 @" \(erroneous\)$",
                 RegexOptions.Compiled |
                 RegexOptions.Multiline |
+                RegexOptions.CultureInvariant |
                 RegexOptions.NonBacktracking
             );
             intitle = true;
@@ -96,6 +90,7 @@ err:        -- search for erroneous bookmarks
                     pattern,
                     RegexOptions.NonBacktracking |
                     RegexOptions.Compiled |
+                    RegexOptions.CultureInvariant |
                     (caseSensitive ? 0 : RegexOptions.IgnoreCase) |
                     (singleLine ? RegexOptions.Singleline : RegexOptions.Multiline)
                 );
@@ -107,8 +102,10 @@ err:        -- search for erroneous bookmarks
             }
         }
 
-        var result = new ConcurrentBag<BookmarkSearchResult>();
-        Parallel.ForEach(_loadedBookmarks, new ParallelOptions { MaxDegreeOfParallelism = 2 }, b =>
+        var result = new SortedSet<BookmarkSearchResult>(comparer: new DateTimeComparer());
+        Lock @lock = new();
+
+        Parallel.ForEach(loadedBookmarks, b =>
         {
             MatchCollection matchCollection;
             BookmarkSearchResult.MatchKind matchKind = BookmarkSearchResult.MatchKind.None;
@@ -119,7 +116,9 @@ err:        -- search for erroneous bookmarks
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Irrelevant;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
+
+                    lock (@lock)
+                        result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, matchKind));
                 }
             }
             else if (intitle)
@@ -128,7 +127,8 @@ err:        -- search for erroneous bookmarks
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Irrelevant;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
+                    lock (@lock)
+                        result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, matchKind));
                 }
             }
             else
@@ -137,7 +137,8 @@ err:        -- search for erroneous bookmarks
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Url;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
+                    lock (@lock)
+                        result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, matchKind));
                     return;
                 }
 
@@ -145,39 +146,39 @@ err:        -- search for erroneous bookmarks
                 if (matchCollection.Count > 0)
                 {
                     matchKind = BookmarkSearchResult.MatchKind.Title;
-                    result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind));
+                    lock (@lock)
+                        result.Add(new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, matchKind));
                     return;
                 }
 
                 if (b.SiteContentsId is long siteContentsId)
                 {
-                    var content = _loadContentsFunc(siteContentsId);
+                    var content = loadContentsFunc(siteContentsId);
                     matchCollection = regex.Matches(content);
                     if (matchCollection.Count > 0)
                     {
                         matchKind = BookmarkSearchResult.MatchKind.Content;
-                        var item = new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.ToMyDateTime(), b.ParentTitle, b.SiteContentsId, matchKind, matchCollection, fullContent: content);
-                        result.Add(item);
+                        var item = new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, matchKind, matchCollection, fullContent: content);
+                        lock (@lock)
+                            result.Add(item);
                     }
                 }
             }
         });
+
         return result;
     }
 
-    public class RegExException : Exception
+    public class RegExException(string msg, Exception ie) : Exception(msg, ie)
     {
-        public RegExException(string msg, Exception ie) : base(msg, ie)
-        {
 
-        }
+    }
 
-        public RegExException() : base()
+    internal struct DateTimeComparer : IComparer<BookmarkSearchResult>
+    {
+        public int Compare(BookmarkSearchResult x, BookmarkSearchResult y)
         {
-        }
-
-        public RegExException(string message) : base(message)
-        {
+            return y.DateTimeAdded.CompareTo(x.DateTimeAdded);
         }
     }
 

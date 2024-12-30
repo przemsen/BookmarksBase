@@ -18,6 +18,8 @@ class GeneralSettings
     public bool BackupExistingDatabaseToZip { get; set; }
     public bool ConsoleReadKeyAtTheEnd { get; set; }
     public string DatabaseFileName { get; set; }
+    public string PlacesFilePath { get; set; }
+    public string CookiesFilePath { get; set; }
     public IEnumerable<StealCookie> CookieStealings { get; set; }
 }
 

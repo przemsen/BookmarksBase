@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,13 +19,13 @@ abstract class BookmarksImporterBase : IDisposable
 {
     protected readonly Options _options;
 
-    private readonly object _lck;
+    private readonly Lock _lock;
     private readonly List<string> _errLog;
     private readonly BookmarksBaseStorageService _storage;
     private readonly Random _random = new ();
     private readonly SemaphoreSlim _throttler;
     private readonly IHttpClientFactory _httpClientFactory;
-    protected Dictionary<StealCookie, string> _cookies = new();
+    protected Dictionary<StealCookie, string> _cookies = [];
 
     public abstract void GetCookies();
     public abstract IEnumerable<Bookmark> GetBookmarks(int initialCount = DEFAULT_BOOKMARKS_LIST_CAPACITY);
@@ -37,6 +38,8 @@ abstract class BookmarksImporterBase : IDisposable
         IEnumerable<string> ExceptionalUrls,
         string UserAgent,
         string TempDir,
+        string PlacesFilePath,
+        string CookiesFilePath,
         IEnumerable<StealCookie> CookieStealings
     );
 
@@ -53,8 +56,8 @@ abstract class BookmarksImporterBase : IDisposable
         AssertLynxDependencies();
         _options = options;
         _throttler = new SemaphoreSlim(options.ThrottlerSemaphoreValue);
-        _lck = new object();
-        _errLog = new List<string>();
+        _lock = new Lock();
+        _errLog = [];
         _storage = storage;
         _httpClientFactory = httpClientFactory;
     }
@@ -104,7 +107,7 @@ abstract class BookmarksImporterBase : IDisposable
     {
         string downloadedFileName = null;
         var httpClient = _httpClientFactory.CreateClient(DEFAULTHTTPCLIENT);
-        await Task.Delay(_random.Next(1000, 3000)).ConfigureAwait(false);
+        await Task.Delay(_random.Next(1000, 3500)).ConfigureAwait(false);
         bool isSuccess = true;
 
         if (url.StartsWith("about:"))
@@ -170,7 +173,7 @@ abstract class BookmarksImporterBase : IDisposable
                 isSuccess = false;
                 if (hre.StatusCode is not null)
                 {
-                    lock (_lck)
+                    using (_lock.EnterScope())
                     {
                         var statusCodeString = hre.StatusCode.Value.ToString();
                         if (hre.StatusCode == HttpStatusCode.NotFound)
@@ -186,7 +189,7 @@ abstract class BookmarksImporterBase : IDisposable
                 }
                 else if (hre.InnerException is SocketException se)
                 {
-                    lock (_lck)
+                    using (_lock.EnterScope())
                     {
                         _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) SocketException {se.Message} {FailMarker(i)} <br />");
                     }
@@ -194,9 +197,9 @@ abstract class BookmarksImporterBase : IDisposable
                 }
                 else
                 {
-                    lock (_lck)
+                    using (_lock.EnterScope())
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre.Message} {FailMarker(i)} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre.Message} {FailMarker(i)} {hre.ToString()} --- with InnerException: --- {hre.InnerException?.ToString()} <br />");
                     }
                 }
 
@@ -208,7 +211,7 @@ abstract class BookmarksImporterBase : IDisposable
             catch (Exception e)
             {
                 isSuccess = false;
-                lock (_lck)
+                using (_lock.EnterScope())
                 {
                     if (e.InnerException is TimeoutException)
                     {
@@ -393,27 +396,31 @@ abstract class BookmarksImporterBase : IDisposable
 
     private static void AssertLynxDependencies()
     {
-        string dependency = "lynx";
-        if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dependency)))
-            Throw(dependency);
+        string lynxDirDependency = "lynx";
+        if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, lynxDirDependency)))
+        {
+            throw new FileNotFoundException($"Missing directory dependency: {lynxDirDependency}");
+        }
 
-        dependency = "lynx.exe";
-        if (CheckIfFileExists(dependency) is false)
-            Throw(dependency);
+        string[] filesDependencies = [
+            "lynx.exe",
+            "libssl-3.dll",
+            "libcrypto-3.dll",
+            "lynx.cfg"
+        ];
 
-        dependency = "libssl-1_1.dll";
-        if (CheckIfFileExists(dependency) is false)
-            Throw(dependency);
+        foreach (var dep in filesDependencies)
+        {
+            AssertFileDependency(dep, lynxDirDependency);
+        }
+    }
 
-        dependency = "libcrypto-1_1.dll";
-        if (CheckIfFileExists(dependency) is false)
-            Throw(dependency);
-
-        dependency = "lynx.cfg";
-        if (CheckIfFileExists(dependency) is false)
-            Throw(dependency);
-
-        static void Throw(string what) => throw new FileNotFoundException($"Missing Lynx file/directory dependency: {what}");
-        static bool CheckIfFileExists(string path) => File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lynx"), path));
+    protected static void AssertFileDependency(string path, string dir = "")
+    {
+        var exists = File.Exists(Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dir), path));
+        if (exists is false)
+        {
+            throw new FileNotFoundException($"Missing file dependency: {dir}\\{path}");
+        }
     }
 }

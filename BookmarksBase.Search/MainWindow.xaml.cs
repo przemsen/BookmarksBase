@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     private readonly StringBuilder _findTxtSb = new(capacity: INITIAL_SEARCH_TEXT_STRINGBUILDER_CAPACITY);
 
     private Run _findTxtRun;
-    private Paragraph _findTxtParagraph;
+    private readonly Paragraph _findTxtParagraph;
 
     private List<Run> _highlightedRuns;
     private List<Run>.Enumerator _highlightedRunsEnumerator;
@@ -206,7 +206,6 @@ public partial class MainWindow : Window
     {
         await Dispatcher.InvokeAsync(async () =>
             {
-
                 if (e.Key == Key.Enter)
                 {
                     await DoSearch();
@@ -230,7 +229,7 @@ public partial class MainWindow : Window
     {
         var (keywordTr, restTr) = GetFindTxtTextRangeForText(BookmarksBaseSearchEngine.KeywordsList);
 
-        if (keywordTr is null && _findTxtHasBeenColored is true)
+        if (keywordTr is null && _findTxtHasBeenColored)
         {
             var text = FindTxtText();
             _findTxtRun = new Run(text);
@@ -309,7 +308,7 @@ public partial class MainWindow : Window
         return ret;
     }
 
-    private (TextRange keywordTr, TextRange restTr) GetFindTxtTextRangeForText(string[] keywords)
+    private (TextRange keywordTr, TextRange restTr) GetFindTxtTextRangeForText(IEnumerable<string> keywords)
     {
         string foundKeyword = null;
         var findTxtText = FindTxtText();
@@ -333,7 +332,7 @@ public partial class MainWindow : Window
         // The 2 is because starting tags for Run and Paragraph also count
         // The multiplying is because sometimes there are spontaneous splits into multiple Runs, thus we
         // have to be always prepared for many Runs
-        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundKeyword.Length + 2 * _findTxtParagraph.Inlines.Count);
+        var endPtr = FindTxt.Document.ContentStart.GetPositionAtOffset(foundKeyword.Length + (2 * _findTxtParagraph.Inlines.Count));
 
         var restEndPtr = FindTxt.Document.ContentEnd;
 
@@ -365,7 +364,7 @@ public partial class MainWindow : Window
         }
 
         ResultsFlowDocument.Blocks.Clear();
-        //Debug.WriteLine($"TryStartNoGCRegion: {GC.TryStartNoGCRegion(100_000_000)}");
+
         Stopwatch stopWatch = Stopwatch.StartNew();
         long searchEngineElapsedMs = 0L;
         int resultsCount = 0;
@@ -392,9 +391,13 @@ public partial class MainWindow : Window
             }
             else
             {
-                var sortedResult = result.OrderByDescending(b => b.DateAdded).ToArray();
+                var sortedResult = result;
                 UrlLst.DataContext = sortedResult;
-                firstResultToScroll = sortedResult switch { [var first, ..] => first, _ => null };
+
+                if (sortedResult.Any())
+                {
+                    firstResultToScroll = sortedResult.First();
+                }
             }
 
             if (result.Count == 0)
@@ -449,7 +452,6 @@ public partial class MainWindow : Window
         finally
         {
             stopWatch.Stop();
-            //GC.EndNoGCRegion();
             FindTxt.IsEnabled = true;
             StatusTxt.Text = $"Input: ⟨ {FindTxtText()} ⟩. Results count: {resultsCount}. Finished in total {stopWatch.ElapsedMilliseconds} ms. Search engine: {searchEngineElapsedMs} ms. UI: {stopWatch.ElapsedMilliseconds - searchEngineElapsedMs} ms";
         }
@@ -484,7 +486,7 @@ public partial class MainWindow : Window
 
         var paragraph = new Paragraph();
 
-        _highlightedRuns = new();
+        _highlightedRuns = [];
 
         NextMatchButton.Visibility = Visibility.Visible;
         MatchCountTextBlock.Visibility = Visibility.Visible;

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <Nullable>disable</Nullable>
         <ApplicationIcon>Properties\icon.ico</ApplicationIcon>
         <PlatformTarget>x64</PlatformTarget>
@@ -11,6 +11,7 @@
         <DebugSymbols>true</DebugSymbols>
         <DebugType>embedded</DebugType>
         <NoWarn>$(NoWarn)</NoWarn>
+        <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsPreviewNamespaces>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,20 +24,20 @@
 
     <PropertyGroup>
         <IncludeSourceRevisionInInformationalVersion>fasle</IncludeSourceRevisionInInformationalVersion>
-        <AssemblyVersion>3.0.0</AssemblyVersion>
-        <ProductVersion>3.0</ProductVersion>
+        <AssemblyVersion>3.1.0</AssemblyVersion>
+        <ProductVersion>3.1</ProductVersion>
         <InformationalVersion>$(CurrentDate)</InformationalVersion>
         <ProductName>BookmarksBase.Importer</ProductName>
         <Company>Przemysław Seneczko</Company>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.*" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.*" />
     </ItemGroup>
 
     <ItemGroup>
@@ -61,11 +62,11 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
 
-        <None Include="lynx\libcrypto-1_1.dll">
+        <None Include="lynx\libcrypto-3.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
 
-        <None Include="lynx\libssl-1_1.dll">
+        <None Include="lynx\libssl-3.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
 
