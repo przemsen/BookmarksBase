@@ -80,9 +80,9 @@ var options = new BookmarksImporterBase.Options(
         ExceptionalUrls: settingsDownloader.ExceptionalUrls,
         UserAgent: settingsDownloader.UserAgent,
         TempDir: settingsDownloader.TempDir,
-        CookieStealings: settingsGeneral.CookieStealings.Select(
+        CookieStealings: settingsGeneral.CookieStealings?.Select(
             x => new BookmarksImporterBase.StealCookie(x.ForUrl, x.WhereHostRLike)
-        ),
+        ) ?? Enumerable.Empty<BookmarksImporterBase.StealCookie>(),
         PlacesFilePath: settingsGeneral.PlacesFilePath,
         CookiesFilePath: settingsGeneral.CookiesFilePath
     );
