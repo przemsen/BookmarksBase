@@ -35,6 +35,7 @@
 
 # 3. Release notes #
 
-- All applications are written for .NET6 (at the moment)
+- All applications are written for .NET9
 - Currently only Firefox web browser is supported. Other implementations can easily be created by inheriting `BookmarksImporter` class (following open-closed principle)
+- It is possible to launch `BookmarksImporter` in the ad-hoc mode, where desired URLs are provided in `appsettings.importer.json` instead of pulling them from the Firefox browser profile. This is the default mode in the settings file from release package
 - HTML parsing is done with [Lynx](http://lynx.isc.org) and thus its binaries (included) are required to run the importer
