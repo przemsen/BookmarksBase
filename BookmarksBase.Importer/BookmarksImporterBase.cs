@@ -153,11 +153,22 @@ abstract class BookmarksImporterBase : IDisposable
                     return new DownloadResult(DownloadedFileName: null, ContentsIfProblem: "Unsupported content type", IsSuccess: false);
                 }
 
-                if (((int)httpResponse.StatusCode) >= 300 && ((int)httpResponse.StatusCode) <= 399)
+                int statusCode = (int)httpResponse.StatusCode;
+                if (statusCode is >= 300 and < 400)
                 {
-                    var redirectUri = httpResponse.Headers.Location;
-                    url = redirectUri.ToString();
-                    continue;
+                    if (httpResponse?.Headers?.Location is Uri redirectUri)
+                    {
+                        url = redirectUri.ToString();
+                        continue;
+                    }
+                    else
+                    {
+                        using (_lock.EnterScope())
+                        {
+                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} but absent location {FailMarker(i)} <br />");
+                        }
+                        continue;
+                    }
                 }
 
                 var httpResponseString = Encoding.UTF8.GetString(await httpResponse.Content.ReadAsByteArrayAsync());
