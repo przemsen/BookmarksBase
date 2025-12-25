@@ -40,6 +40,7 @@ abstract class BookmarksImporterBase : IDisposable
         string TempDir,
         string PlacesFilePath,
         string CookiesFilePath,
+        string NodeJSFilePath,
         IEnumerable<StealCookie> CookieStealings
     );
 
@@ -62,38 +63,56 @@ abstract class BookmarksImporterBase : IDisposable
         _httpClientFactory = httpClientFactory;
     }
 
-    public Task<DownloadResult> DownloadUrlWithEdge(string url) => Task.Run(() =>
+    public Task<DownloadResult> DownloadUrlWithNode(string url) => Task.Run(() =>
     {
         try
         {
             _throttler.Wait();
 
-            Trace.WriteLine($"{GetDateTime()} - Starting with MS Edge: {url} <br />");
-            using var msEdge = new Process();
+            Trace.WriteLine($"{GetDateTime()} - Starting with NodeJS: {url} <br />");
+            using var nodeJs = new Process();
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
 
-            msEdge.StartInfo.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            msEdge.StartInfo.FileName = MS_EDGE_COMMAND;
-            msEdge.StartInfo.Arguments =
-                MS_EDGE_COMMANDLINE_OPTIONS +
-                $"--user-agent=\"{_options.UserAgent}\" \"{url}\"";
-            msEdge.StartInfo.UseShellExecute = false;
-            msEdge.StartInfo.RedirectStandardOutput = true;
-            msEdge.StartInfo.RedirectStandardError = true;
-            msEdge.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-            msEdge.Start();
+            nodeJs.StartInfo.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            nodeJs.StartInfo.FileName = _options.NodeJSFilePath;
+            nodeJs.StartInfo.ArgumentList.Add("-e");
+            nodeJs.StartInfo.ArgumentList.Add(string.Format(NODEJS_INLINE_PROGRAM, url, _options.UserAgent));
+            nodeJs.StartInfo.UseShellExecute = false;
+            nodeJs.StartInfo.RedirectStandardOutput = true;
+            nodeJs.StartInfo.RedirectStandardError = true;
+            nodeJs.StartInfo.StandardOutputEncoding = Encoding.UTF8;
+            nodeJs.Start();
 
-            var stdoutString = msEdge.StandardOutput.ReadToEnd();
-            msEdge.WaitForExit(WAIT_TIMEOUT_FOR_LYNX);
+            var stdoutStringTask = nodeJs.StandardOutput.ReadToEndAsync();
+            var stdoutTimeOutTask = Task.Delay(10_000);
 
-            if (stdoutString.StartsWith("<html><head></head><body></body></html>"))
+            DownloadResult timeOutResult = null;
+
+            Task.WhenAny([stdoutStringTask, stdoutTimeOutTask]).ContinueWith(t =>
             {
-                Trace.WriteLine($"{GetDateTime()} - Edge ERROR: {url} <br />");
+                if (t == stdoutTimeOutTask)
+                {
+                    timeOutResult = new DownloadResult(null, null, IsSuccess: false);
+                }
+            }).GetAwaiter().GetResult();
+
+            if (timeOutResult is not null)
+            {
+                return timeOutResult;
+            }
+
+            nodeJs.WaitForExit(WAIT_TIMEOUT_FOR_LYNX * 5);
+
+            if (nodeJs.ExitCode != 0)
+            {
+                Trace.WriteLine($"{GetDateTime()} - NodeJS ERROR: {url} <br />");
                 return new DownloadResult(null, null, IsSuccess: false);
             }
 
+            nodeJs.Close();
+
             var downloadedFileName = GenerateTempFileName();
-            File.WriteAllText(downloadedFileName, stdoutString, Encoding.UTF8);
+            File.WriteAllText(downloadedFileName, stdoutStringTask.Result, Encoding.UTF8);
 
             return new DownloadResult(DownloadedFileName: downloadedFileName, null, IsSuccess: true);
         }
@@ -305,16 +324,13 @@ abstract class BookmarksImporterBase : IDisposable
 
         foreach (var b in bookmarksList)
         {
-            bool useMsEdge =
-                _options.ExceptionalUrls is not null && (
-                    _options.ExceptionalUrls.Contains("*") ||
-                    _options.ExceptionalUrls.Contains(b.Url)
-                )
-                ;
+            bool useAlternativeDownloader =
+                _options.ExceptionalUrls is not null &&
+                _options.ExceptionalUrls.Any(eu => b.Url.StartsWith(eu));
 
-            var downloadTask = useMsEdge switch
+            var downloadTask = useAlternativeDownloader switch
             {
-                true => DownloadUrlWithEdge(b.Url),
+                true => DownloadUrlWithNode(b.Url),
                 _ =>  DownloadUrl(b.Url),
             };
 
@@ -369,11 +385,8 @@ abstract class BookmarksImporterBase : IDisposable
         public const int DOWNLOAD_RETRY_COUNT = 3;
         public const int DEFAULT_THROTTLER_VALUE  = 4;
 
-        public const string MS_EDGE_COMMAND = "c:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-        public const string MS_EDGE_COMMANDLINE_OPTIONS =
-            "--virtual-time-budget=20000 --timeout=20000 " +
-            "--run-all-compositor-stages-before-draw --disable-gpu --headless --dump-dom " +
-            "--incognito --disable-sync --window-size=1280,800 --disable-blink-features=AutomationControlled "
+        public const string NODEJS_INLINE_PROGRAM =
+            "const url = '{0}'; const fetchOptions = {{ method: 'GET', headers: {{ 'User-Agent': '{1}', 'Accept': 'text/html, application/xhtml+xml, text/plain, application/xml'}}, redirect: 'follow'}}; const response = await fetch(url); let rawHtmlInput = await response.text(); console.log(rawHtmlInput);"
             ;
 
         public const string LYNX_COMMAND = "lynx\\lynx.exe";

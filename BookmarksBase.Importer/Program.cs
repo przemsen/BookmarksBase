@@ -84,7 +84,8 @@ var options = new BookmarksImporterBase.Options(
             x => new BookmarksImporterBase.StealCookie(x.ForUrl, x.WhereHostRLike)
         ) ?? Enumerable.Empty<BookmarksImporterBase.StealCookie>(),
         PlacesFilePath: settingsGeneral.PlacesFilePath,
-        CookiesFilePath: settingsGeneral.CookiesFilePath
+        CookiesFilePath: settingsGeneral.CookiesFilePath,
+        NodeJSFilePath: settingsDownloader.NodeJSPath
     );
 
 try

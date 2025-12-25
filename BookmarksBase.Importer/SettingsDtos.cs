@@ -8,6 +8,7 @@ class DownloaderSettings
     public int Timeout { get; set; }
     public IEnumerable<string> ExceptionalUrls { get; set; }
     public string TempDir { get; set; }
+    public string NodeJSPath { get; set; }
 }
 
 class GeneralSettings
