@@ -132,7 +132,7 @@ try
 
     storage.PrepareTablesAndBeginTransaction();
 
-    fbi.PopulateContentIds(bookmarks);
+    fbi.DownloadContents(bookmarks);
     storage.SaveBookmarksBase(bookmarks);
 
     storage.Commit();
@@ -213,8 +213,8 @@ static string GetAssemblyVersionInfo()
     var inforVersion = theAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
     return $"{fvi.FileMajorPart}.{fvi.FileMinorPart} — Build {inforVersion}";
 }
+
 #endregion
-//}
 
 class TextWriterTraceListenerWithHtmlFiler : TextWriterTraceListener
 {

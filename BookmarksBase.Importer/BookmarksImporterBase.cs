@@ -35,7 +35,7 @@ abstract class BookmarksImporterBase : IDisposable
         int ThrottlerSemaphoreValue,
         int LimitOfQueriedBookmarks,
         int SkipQueriedBookmarks,
-        IEnumerable<string> ExceptionalUrls,
+        List<string> ExceptionalUrls,
         string UserAgent,
         string TempDir,
         string PlacesFilePath,
@@ -310,7 +310,7 @@ abstract class BookmarksImporterBase : IDisposable
         return ret;
     }
 
-    public void PopulateContentIds(IEnumerable<Bookmark> bookmarksList)
+    public void DownloadContents(IEnumerable<Bookmark> bookmarksList)
     {
         if (bookmarksList.TryGetNonEnumeratedCount(out int count) is false)
         {
@@ -325,8 +325,8 @@ abstract class BookmarksImporterBase : IDisposable
         foreach (var b in bookmarksList)
         {
             bool useAlternativeDownloader =
-                _options.ExceptionalUrls is not null &&
-                _options.ExceptionalUrls.Any(eu => b.Url.StartsWith(eu));
+                _options.ExceptionalUrls is [.. var exUrls ] &&
+                exUrls.Any(b.Url.StartsWith);
 
             var downloadTask = useAlternativeDownloader switch
             {

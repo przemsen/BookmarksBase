@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>disable</Nullable>
 
         <!-- Do not produce pdb, but embed symbols instead. Allows for line numbers in stack traces -->
         <DebugSymbols>true</DebugSymbols>
         <DebugType>embedded</DebugType>
-        <IncludeSourceRevisionInInformationalVersion>fasle</IncludeSourceRevisionInInformationalVersion>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
         <NoWarn>$(NoWarn)</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     </ItemGroup>
 
 </Project>
