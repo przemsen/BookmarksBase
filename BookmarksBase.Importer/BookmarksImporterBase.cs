@@ -101,11 +101,15 @@ abstract class BookmarksImporterBase : IDisposable
                 return timeOutResult;
             }
 
-            nodeJs.WaitForExit(WAIT_TIMEOUT_FOR_LYNX * 5);
+            if (nodeJs.WaitForExit(WAIT_TIMEOUT_FOR_LYNX * 10) is false)
+            {
+                Trace.WriteLine($"{GetDateTime()} - NodeJS process wait ERROR: {url} <br />");
+                return new DownloadResult(null, null, IsSuccess: false);
+            }
 
             if (nodeJs.ExitCode != 0)
             {
-                Trace.WriteLine($"{GetDateTime()} - NodeJS ERROR: {url} <br />");
+                Trace.WriteLine($"{GetDateTime()} - NodeJS exit code ERROR: {url} <br />");
                 return new DownloadResult(null, null, IsSuccess: false);
             }
 
@@ -126,7 +130,7 @@ abstract class BookmarksImporterBase : IDisposable
     {
         string downloadedFileName = null;
         var httpClient = _httpClientFactory.CreateClient(DEFAULTHTTPCLIENT);
-        await Task.Delay(_random.Next(1000, 3500)).ConfigureAwait(false);
+        await Task.Delay(_random.Next(1500, 4000)).ConfigureAwait(false);
         bool isSuccess = true;
 
         if (url.StartsWith("about:"))
@@ -136,7 +140,7 @@ abstract class BookmarksImporterBase : IDisposable
 
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
         {
-            if (i > 0) await Task.Delay(_random.Next(4000, 6000)).ConfigureAwait(false);
+            if (i > 0) await Task.Delay(_random.Next(4500, 7000)).ConfigureAwait(false);
             try
             {
                 await _throttler.WaitAsync();
@@ -343,10 +347,31 @@ abstract class BookmarksImporterBase : IDisposable
         }
 
         Trace.WriteLine($"{GetDateTime()} Waiting for completion of all remaining downloads... <br />");
-        Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+        try
+        {
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
+        }
+        catch (TaskCanceledException e)
+        {
+            Trace.WriteLine($"{GetDateTime()} TaskCanceledException thrown <br />");
+
+            var canceledTasks = tasks.Where(t => t.IsCanceled || t.IsFaulted).ToArray();
+            if (canceledTasks.Length > 0)
+            {
+                foreach (var canceledTask in canceledTasks)
+                {
+                    var pair = taskBookmarkPairs.Single(x => x.Task == canceledTask);
+                    Trace.WriteLine($"{GetDateTime()} Task canceled/faulted ${pair.Bookmark.Url} <br />");
+                }
+
+                Task.WhenAll(tasks.Where(t => !t.IsCanceled && !t.IsFaulted)).GetAwaiter().GetResult();
+            }
+        }
+
         Trace.WriteLine($"{GetDateTime()} All downloads completed <br />");
 
-        foreach (var tb in taskBookmarkPairs)
+        foreach (var tb in taskBookmarkPairs.Where(x => !x.Task.IsFaulted && !x.Task.IsCanceled))
         {
             if (tb.Task.Result is null)
             {
@@ -380,14 +405,13 @@ abstract class BookmarksImporterBase : IDisposable
     public static class Constants
     {
         public const string DEFAULTHTTPCLIENT = nameof(DEFAULTHTTPCLIENT);
-        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 2500;
+        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 4500;
         public const int WAIT_TIMEOUT_FOR_LYNX = 1000;
         public const int DOWNLOAD_RETRY_COUNT = 3;
         public const int DEFAULT_THROTTLER_VALUE  = 4;
 
         public const string NODEJS_INLINE_PROGRAM =
-            "const url = '{0}'; const fetchOptions = {{ method: 'GET', headers: {{ 'User-Agent': '{1}', 'Accept': 'text/html, application/xhtml+xml, text/plain, application/xml'}}, redirect: 'follow'}}; const response = await fetch(url); let rawHtmlInput = await response.text(); console.log(rawHtmlInput);"
-            ;
+            "const url = '{0}'; const fetchOptions = {{ signal: AbortSignal.timeout(7000), method: 'GET', headers: {{ 'User-Agent': '{1}', 'Accept': 'text/html, application/xhtml+xml, text/plain, application/xml'}}, redirect: 'follow'}}; try {{ const response = await fetch(url, fetchOptions); if (!response.ok) {{ console.log('http error'); process.exit(1); }} let rawHtmlInput = await response.text(); console.log(rawHtmlInput); }} catch (error) {{ console.log('fetch error'); process.exit(1); }}";
 
         public const string LYNX_COMMAND = "lynx\\lynx.exe";
         public const string LYNX_COMMANDLINE_OPTIONS =
