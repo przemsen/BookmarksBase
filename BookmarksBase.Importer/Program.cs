@@ -108,7 +108,7 @@ try
                 Url = url,
                 DateAdded = DateTime.Now,
                 ParentTitle = "Parent",
-                Title = "Title bb:onlytitle"
+                Title = "Title"
             }
         ).ToList();
     }

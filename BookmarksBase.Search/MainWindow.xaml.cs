@@ -65,7 +65,7 @@ public partial class MainWindow : Window
             );
 
             _searchEngine = new BookmarksBaseSearchEngine(
-                (long siteContentsId) => _storage.LoadContents(siteContentsId),
+                siteContentsId => _storage.LoadContents(siteContentsId),
                 _storage.LoadedBookmarks
             );
 
@@ -394,7 +394,7 @@ public partial class MainWindow : Window
                 var sortedResult = result;
                 UrlLst.DataContext = sortedResult;
 
-                if (sortedResult.Any())
+                if (sortedResult.Count != 0)
                 {
                     firstResultToScroll = sortedResult.First();
                 }

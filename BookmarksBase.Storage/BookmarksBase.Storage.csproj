@@ -8,7 +8,7 @@
         <DebugSymbols>true</DebugSymbols>
         <DebugType>embedded</DebugType>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-        <NoWarn>$(NoWarn)</NoWarn>
+        <NoWarn>$(NoWarn);RCS1194;</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

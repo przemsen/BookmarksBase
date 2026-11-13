@@ -1,4 +1,3 @@
-using BookmarksBase.Search.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,9 +41,9 @@ public class BookmarksBaseSearchEngine(Func<long, string> loadContentsFunc, IRea
             || string.IsNullOrEmpty(pattern)
         )
         {
-            return loadedBookmarks.Select(
+            return [.. loadedBookmarks.Select(
                 b => new BookmarkSearchResult(b.Url, b.Title, b.DateAdded.MyToString(), b.DateAdded, b.ParentTitle, b.SiteContentsId, BookmarkSearchResult.MatchKind.None)
-            ).ToArray();
+            )];
         }
 
         bool inurl = false, caseSensitive = false, intitle = false, singleLine = false;
@@ -176,7 +175,7 @@ public class BookmarksBaseSearchEngine(Func<long, string> loadContentsFunc, IRea
 
     internal struct DateTimeComparer : IComparer<BookmarkSearchResult>
     {
-        public int Compare(BookmarkSearchResult x, BookmarkSearchResult y)
+        public readonly int Compare(BookmarkSearchResult x, BookmarkSearchResult y)
         {
             return y.DateTimeAdded.CompareTo(x.DateTimeAdded);
         }

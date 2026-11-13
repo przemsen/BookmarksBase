@@ -44,11 +44,10 @@ abstract class BookmarksImporterBase : IDisposable
         IEnumerable<StealCookie> CookieStealings
     );
 
-    public record DownloadResult(
-        string DownloadedFileName,
-        string AlternativeContents,
-        bool IsSuccess
-    );
+    public union DownloadResult(FileDownloadedResult, AlternativeContentsResult, FailedDownloadResult);
+    public sealed record FailedDownloadResult;
+    public sealed record FileDownloadedResult(string DownloadedFileName);
+    public sealed record AlternativeContentsResult(string AlternativeContents);
 
     public record StealCookie(string ForUrl, string WhereHostRLike);
 
@@ -68,12 +67,14 @@ abstract class BookmarksImporterBase : IDisposable
         try
         {
             _throttler.Wait();
-
             Trace.WriteLine($"{GetDateTime()} - Starting with NodeJS: {url} <br />");
-            ProcessStartInfo nodeJsPsi = new();
 
-            nodeJsPsi.WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            nodeJsPsi.FileName = _options.NodeJSFilePath;
+            ProcessStartInfo nodeJsPsi = new()
+            {
+                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                FileName = _options.NodeJSFilePath
+            };
+
             nodeJsPsi.ArgumentList.Add("-e");
             nodeJsPsi.ArgumentList.Add(string.Format(NODEJS_INLINE_PROGRAM, url, _options.UserAgent));
             nodeJsPsi.UseShellExecute = false;
@@ -86,18 +87,18 @@ abstract class BookmarksImporterBase : IDisposable
             if (nodeJsResult.ExitStatus.ExitCode != 0)
             {
                 Trace.WriteLine($"{GetDateTime()} - NodeJS exit code ERROR: {url} <br />");
-                return new DownloadResult(null, null, IsSuccess: false);
+                return new DownloadResult(new FailedDownloadResult());
             }
 
             var downloadedFileName = GenerateTempFileName();
             File.WriteAllText(downloadedFileName, nodeJsResult.StandardOutput, Encoding.UTF8);
 
-            return new DownloadResult(DownloadedFileName: downloadedFileName, AlternativeContents: null, IsSuccess: true);
+            return new DownloadResult(new FileDownloadedResult(downloadedFileName));
         }
         catch (TimeoutException)
         {
             Trace.WriteLine($"{GetDateTime()} - NodeJS process wait ERROR: {url} <br />");
-            return new DownloadResult(null, null, IsSuccess: false);
+            return new DownloadResult(new FailedDownloadResult());
         }
         finally
         {
@@ -110,11 +111,10 @@ abstract class BookmarksImporterBase : IDisposable
         string downloadedFileName = null;
         var httpClient = _httpClientFactory.CreateClient(DEFAULTHTTPCLIENT);
         await Task.Delay(_random.Next(1500, 4000)).ConfigureAwait(false);
-        bool isSuccess = true;
 
         if (url.StartsWith("about:"))
         {
-            return new DownloadResult(DownloadedFileName: null, AlternativeContents: "Site from \"about\" protocol", IsSuccess: false);
+            return new DownloadResult(new AlternativeContentsResult("""Site from "about" protocol"""));
         }
 
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
@@ -152,7 +152,7 @@ abstract class BookmarksImporterBase : IDisposable
                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
                 )
                 {
-                    return new DownloadResult(DownloadedFileName: null, AlternativeContents: "Unsupported content type", IsSuccess: false);
+                    return new DownloadResult(new FailedDownloadResult());
                 }
 
                 int statusCode = (int)httpResponse.StatusCode;
@@ -177,13 +177,11 @@ abstract class BookmarksImporterBase : IDisposable
 
                 downloadedFileName = GenerateTempFileName();
                 File.WriteAllText(downloadedFileName, httpResponseString, Encoding.UTF8);
-                isSuccess = true;
 
                 break;
             }
             catch (HttpRequestException hre)
             {
-                isSuccess = false;
                 if (hre.StatusCode is not null)
                 {
                     using (_lock.EnterScope())
@@ -223,7 +221,6 @@ abstract class BookmarksImporterBase : IDisposable
             }
             catch (Exception e)
             {
-                isSuccess = false;
                 using (_lock.EnterScope())
                 {
                     if (e.InnerException is TimeoutException)
@@ -251,28 +248,25 @@ abstract class BookmarksImporterBase : IDisposable
             }
         }
 
-        return new DownloadResult(DownloadedFileName: downloadedFileName, null, IsSuccess: isSuccess);
+        return new DownloadResult(new FileDownloadedResult(downloadedFileName));
     }
 
     public long? SaveRenderedContents(DownloadResult downloadResult)
     {
-        long? ret;
-        if (downloadResult.AlternativeContents is not null)
+        long? ret = null;
+
+        if (downloadResult is AlternativeContentsResult altRresult)
         {
-            ret = _storage.SaveContents(downloadResult.AlternativeContents);
+            ret = _storage.SaveContents(altRresult.AlternativeContents);
         }
-        else if (downloadResult.IsSuccess is false)
-        {
-            return null;
-        }
-        else
+        else if (downloadResult is FileDownloadedResult fileResult)
         {
             ProcessStartInfo lynxPsi = new();
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
 
             lynxPsi.WorkingDirectory = currentDir;
             lynxPsi.FileName = Path.Combine(currentDir, LYNX_COMMAND);
-            lynxPsi.Arguments = LYNX_COMMANDLINE_OPTIONS + downloadResult.DownloadedFileName;
+            lynxPsi.Arguments = LYNX_COMMANDLINE_OPTIONS + fileResult.DownloadedFileName;
             lynxPsi.UseShellExecute = false;
             lynxPsi.RedirectStandardOutput = true;
             lynxPsi.RedirectStandardError = true;
@@ -281,11 +275,8 @@ abstract class BookmarksImporterBase : IDisposable
             var lynxResult = Process.RunAndCaptureText(lynxPsi, WAIT_TIMEOUT_FOR_LYNX_TIMESPAN);
 
             ret = _storage.SaveContents(lynxResult.StandardOutput);
-        }
 
-        if (downloadResult.DownloadedFileName is not null)
-        {
-            File.Delete(downloadResult.DownloadedFileName);
+            File.Delete(fileResult.DownloadedFileName);
         }
 
         return ret;
@@ -310,7 +301,7 @@ abstract class BookmarksImporterBase : IDisposable
             if (b.Title.Contains(SKIP_DOWNLOADING_CONTENTS_MARKER))
             {
                 Trace.WriteLine($"{GetDateTime()} Skipping {b.Url} because of {SKIP_DOWNLOADING_CONTENTS_MARKER} <br />");
-                downloadTask = Task.FromResult(new DownloadResult(null, $"Skipped because of {SKIP_DOWNLOADING_CONTENTS_MARKER} marker", IsSuccess: true));
+                downloadTask = Task.FromResult(new DownloadResult(new AlternativeContentsResult($"Skipped because of {SKIP_DOWNLOADING_CONTENTS_MARKER} marker")));
             }
             else
             {
@@ -392,7 +383,7 @@ abstract class BookmarksImporterBase : IDisposable
     public static class Constants
     {
         public const string DEFAULTHTTPCLIENT = nameof(DEFAULTHTTPCLIENT);
-        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 4500;
+        public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 5000;
         public const int WAIT_TIMEOUT_FOR_LYNX = 1000;
         public static readonly TimeSpan WAIT_TIMEOUT_FOR_LYNX_TIMESPAN = TimeSpan.FromMilliseconds(WAIT_TIMEOUT_FOR_LYNX);
         public const int DOWNLOAD_RETRY_COUNT = 3;

@@ -46,10 +46,7 @@ public class BookmarkSearchResult(
             {
                 var fragmentInBetween = new ContentFragment
                 {
-                    Fragment = FullContent.Substring(
-                        remainingFragmentInBetweenIndex.Value,
-                        m.Index - remainingFragmentInBetweenIndex.Value
-                    ),
+                    Fragment = FullContent[remainingFragmentInBetweenIndex.Value .. m.Index],
                     IsHighlighted = false
                 };
                 result.Add(fragmentInBetween);
@@ -70,10 +67,7 @@ public class BookmarkSearchResult(
 
             var lastFragment = new ContentFragment
             {
-                Fragment = FullContent.Substring(
-                    remainingFragmentInBetweenIndex.Value,
-                    FullContent.Length - remainingFragmentInBetweenIndex.Value
-                ),
+                Fragment = FullContent[remainingFragmentInBetweenIndex.Value..],
                 IsHighlighted = false
             };
             result.Add(lastFragment);

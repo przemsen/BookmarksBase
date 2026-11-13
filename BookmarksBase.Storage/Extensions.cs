@@ -1,12 +1,16 @@
 using System;
 
-namespace BookmarksBase.Search.Storage;
+namespace BookmarksBase.Storage;
 
 public static class Extensions
 {
     const string FMT = "yyyy-MM-dd";
-    public static string MyToString(this DateTime dt)
+
+    extension(DateTime dt)
     {
-        return dt.ToString(FMT);
+        public string MyToString()
+        {
+            return dt.ToString(FMT);
+        }
     }
 }
