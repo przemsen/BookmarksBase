@@ -146,16 +146,6 @@ abstract class BookmarksImporterBase : IDisposable
                     httpResponse = await httpClient.GetAsync(url);
                 }
 
-                Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
-                if
-                (
-                    httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("text") is false ||
-                    httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
-                )
-                {
-                    return new FailedDownloadResult();
-                }
-
                 int statusCode = (int)httpResponse.StatusCode;
                 if (statusCode is >= 300 and < 400)
                 {
@@ -170,11 +160,34 @@ abstract class BookmarksImporterBase : IDisposable
                         {
                             _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} but absent location {FailMarker(i)} <br />");
                         }
-                        continue;
+                        break;
                     }
+                }
+                else if (statusCode is >= 400)
+                {
+                    using (_lock.EnterScope())
+                    {
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} {FailMarker(i)} <br />");
+                    }
+                    break;
+                }
+
+                if
+                (
+                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("text") is false ||
+                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
+                )
+                {
+                    using (_lock.EnterScope())
+                    {
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Wrong Content-Type {FailMarker(i)} <br />");
+                    }
+
+                    break;
                 }
 
                 var httpResponseString = Encoding.UTF8.GetString(await httpResponse.Content.ReadAsByteArrayAsync());
+                Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
 
                 downloadedFileName = GenerateTempFileName();
                 File.WriteAllText(downloadedFileName, httpResponseString, Encoding.UTF8);
