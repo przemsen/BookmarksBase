@@ -87,18 +87,18 @@ abstract class BookmarksImporterBase : IDisposable
             if (nodeJsResult.ExitStatus.ExitCode != 0)
             {
                 Trace.WriteLine($"{GetDateTime()} - NodeJS exit code ERROR: {url} <br />");
-                return new DownloadResult(new FailedDownloadResult());
+                return Task.FromResult<DownloadResult>(new FailedDownloadResult());
             }
 
             var downloadedFileName = GenerateTempFileName();
             File.WriteAllText(downloadedFileName, nodeJsResult.StandardOutput, Encoding.UTF8);
 
-            return new DownloadResult(new FileDownloadedResult(downloadedFileName));
+            return Task.FromResult<DownloadResult>(new FileDownloadedResult(downloadedFileName));
         }
         catch (TimeoutException)
         {
             Trace.WriteLine($"{GetDateTime()} - NodeJS process wait ERROR: {url} <br />");
-            return new DownloadResult(new FailedDownloadResult());
+            return Task.FromResult<DownloadResult>(new FailedDownloadResult());
         }
         finally
         {
@@ -114,11 +114,12 @@ abstract class BookmarksImporterBase : IDisposable
 
         if (url.StartsWith("about:"))
         {
-            return new DownloadResult(new AlternativeContentsResult("""Site from "about" protocol"""));
+            return new AlternativeContentsResult("""Site from "about" protocol""");
         }
 
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
         {
+            downloadedFileName = null;
             if (i > 0) await Task.Delay(_random.Next(4500, 7000)).ConfigureAwait(false);
             try
             {
@@ -152,7 +153,7 @@ abstract class BookmarksImporterBase : IDisposable
                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
                 )
                 {
-                    return new DownloadResult(new FailedDownloadResult());
+                    return new FailedDownloadResult();
                 }
 
                 int statusCode = (int)httpResponse.StatusCode;
@@ -248,7 +249,11 @@ abstract class BookmarksImporterBase : IDisposable
             }
         }
 
-        return new DownloadResult(new FileDownloadedResult(downloadedFileName));
+        return downloadedFileName switch
+        {
+            null => new FailedDownloadResult(),
+            _ => new FileDownloadedResult(downloadedFileName)
+        };
     }
 
     public long? SaveRenderedContents(DownloadResult downloadResult)
@@ -301,7 +306,7 @@ abstract class BookmarksImporterBase : IDisposable
             if (b.Title.Contains(SKIP_DOWNLOADING_CONTENTS_MARKER))
             {
                 Trace.WriteLine($"{GetDateTime()} Skipping {b.Url} because of {SKIP_DOWNLOADING_CONTENTS_MARKER} <br />");
-                downloadTask = Task.FromResult(new DownloadResult(new AlternativeContentsResult($"Skipped because of {SKIP_DOWNLOADING_CONTENTS_MARKER} marker")));
+                downloadTask = Task.FromResult<DownloadResult>(new AlternativeContentsResult($"Skipped because of {SKIP_DOWNLOADING_CONTENTS_MARKER} marker"));
             }
             else
             {
