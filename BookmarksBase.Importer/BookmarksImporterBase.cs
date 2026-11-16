@@ -120,7 +120,7 @@ abstract class BookmarksImporterBase : IDisposable
         for (int i = 0; i < DOWNLOAD_RETRY_COUNT; ++i)
         {
             downloadedFileName = null;
-            if (i > 0) await Task.Delay(_random.Next(4500, 7000)).ConfigureAwait(false);
+            if (i > 0) await Task.Delay(_random.Next(4500, 7000));
             try
             {
                 await _throttler.WaitAsync();
@@ -163,6 +163,11 @@ abstract class BookmarksImporterBase : IDisposable
                         break;
                     }
                 }
+                else if (statusCode is (int)HttpStatusCode.TooManyRequests)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                    continue;
+                }
                 else if (statusCode is >= 400)
                 {
                     using (_lock.EnterScope())
@@ -187,15 +192,16 @@ abstract class BookmarksImporterBase : IDisposable
                 }
 
                 var httpResponseString = Encoding.UTF8.GetString(await httpResponse.Content.ReadAsByteArrayAsync());
-                Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
 
                 downloadedFileName = GenerateTempFileName();
                 File.WriteAllText(downloadedFileName, httpResponseString, Encoding.UTF8);
 
+                Trace.WriteLine($"{GetDateTime()} - OK: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) <br />");
                 break;
             }
             catch (HttpRequestException hre)
             {
+                // This is only not null when EnsureSuccessStatusCode() is called. Keep it as an extra safety net
                 if (hre.StatusCode is not null)
                 {
                     using (_lock.EnterScope())
@@ -205,10 +211,6 @@ abstract class BookmarksImporterBase : IDisposable
                         {
                             _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ProtocolError {statusCodeString} {FailMarker(DOWNLOAD_RETRY_COUNT - 1)} <br />");
                             break;
-                        }
-                        else
-                        {
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) ProtocolError {statusCodeString} {FailMarker(i)} <br />");
                         }
                     }
                 }
