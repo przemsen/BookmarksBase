@@ -24,8 +24,8 @@
 
     <PropertyGroup>
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-        <AssemblyVersion>3.3.1</AssemblyVersion>
-        <ProductVersion>3.3</ProductVersion>
+        <AssemblyVersion>3.3.2</AssemblyVersion>
+        <ProductVersion>3.3.2</ProductVersion>
         <InformationalVersion>$(CurrentDate)</InformationalVersion>
         <ProductName>BookmarksBase.Importer</ProductName>
         <Company>Przemysław Seneczko</Company>

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Reflection;
@@ -28,30 +29,39 @@ configuration.GetRequiredSection(nameof(GeneralSettings)).Bind(settingsGeneral);
 var services = new ServiceCollection();
 services.AddHttpClient(
     BookmarksImporterBase.Constants.DEFAULTHTTPCLIENT,
-c =>
-{
-    c.DefaultRequestHeaders.Add("User-Agent", settingsDownloader.UserAgent);
-    c.DefaultRequestHeaders.Accept.Add(new("text/html"));
-    c.DefaultRequestHeaders.Accept.Add(new("application/xhtml+xml"));
-    c.DefaultRequestHeaders.Accept.Add(new("application/xml"));
-    c.DefaultRequestHeaders.AcceptEncoding.Add(new("gzip"));
-    c.DefaultRequestHeaders.AcceptEncoding.Add(new("deflate"));
-    c.DefaultRequestHeaders.AcceptEncoding.Add(new("br"));
-    c.DefaultRequestHeaders.AcceptLanguage.Add(new("pl"));
-    c.DefaultRequestHeaders.AcceptLanguage.Add(new("en-US"));
-    c.Timeout = TimeSpan.FromMilliseconds(settingsDownloader.Timeout);
-    c.DefaultRequestVersion = new Version("2.0");
-    c.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
-}
-).ConfigurePrimaryHttpMessageHandler(
-    () =>
-    new SocketsHttpHandler
+    c =>
+    {
+        c.DefaultRequestHeaders.UserAgent.ParseAdd(
+            settingsDownloader.UserAgent);
+
+        c.DefaultRequestHeaders.Accept.ParseAdd(
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+
+        c.DefaultRequestHeaders.AcceptLanguage.ParseAdd(
+            "pl,en-US;q=0.9,en;q=0.8");
+
+        // Do not advertise zstd: SocketsHttpHandler cannot decompress it.
+        c.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
+        c.DefaultRequestHeaders.Add("DNT", "1");
+        c.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+        c.DefaultRequestHeaders.Add("Priority", "u=0, i");
+        c.DefaultRequestHeaders.Pragma.ParseAdd("no-cache");
+        c.DefaultRequestHeaders.CacheControl = new() { NoCache = true };
+
+        c.Timeout = TimeSpan.FromMilliseconds(settingsDownloader.Timeout);
+        c.DefaultRequestVersion = HttpVersion.Version30;
+        c.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+    })
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
     {
         AllowAutoRedirect = true,
         MaxAutomaticRedirections = 5,
         UseCookies = true,
-        CookieContainer = new(),
-        AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Brotli | System.Net.DecompressionMethods.Deflate,
+        CookieContainer = new CookieContainer(),
+        AutomaticDecompression =
+            DecompressionMethods.GZip |
+            DecompressionMethods.Deflate |
+            DecompressionMethods.Brotli,
         PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5),
         SslOptions = new SslClientAuthenticationOptions
         {

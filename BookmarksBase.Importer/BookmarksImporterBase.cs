@@ -131,14 +131,13 @@ abstract class BookmarksImporterBase : IDisposable
                 var cookiesKey = _cookies.Keys.SingleOrDefault(x => url.StartsWith(x.ForUrl));
                 if (cookiesKey is not null)
                 {
-                    var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-
-                    foreach (var header in httpClient.DefaultRequestHeaders)
+                    using var requestMessage = new HttpRequestMessage(HttpMethod.Get, url)
                     {
-                        requestMessage.Headers.Add(header.Key, header.Value);
-                    }
-                    requestMessage.Headers.Add("Cookie", _cookies[cookiesKey]);
+                        Version = httpClient.DefaultRequestVersion,
+                        VersionPolicy = httpClient.DefaultVersionPolicy
+                    };
 
+                    requestMessage.Headers.Add("Cookie", _cookies[cookiesKey]);
                     httpResponse = await httpClient.SendAsync(requestMessage);
                 }
                 else
@@ -147,6 +146,7 @@ abstract class BookmarksImporterBase : IDisposable
                 }
 
                 int statusCode = (int)httpResponse.StatusCode;
+
                 if (statusCode is >= 300 and < 400)
                 {
                     if (httpResponse?.Headers?.Location is Uri redirectUri)
@@ -158,13 +158,20 @@ abstract class BookmarksImporterBase : IDisposable
                     {
                         using (_lock.EnterScope())
                         {
-                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} but absent location {FailMarker(i)} <br />");
+                            _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} but absent location {FailMarker(DOWNLOAD_RETRY_COUNT - 1)} <br />");
                         }
                         break;
                     }
                 }
+                else if (statusCode is (int)HttpStatusCode.Forbidden && i == 0)
+                {
+                    url = $"{SCRAPER_URL}/{url}";
+                    Trace.WriteLine($"{GetDateTime()} - Retry: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode 403. It can be caused by scraping detection <br />");
+                    continue;
+                }
                 else if (statusCode is (int)HttpStatusCode.TooManyRequests)
                 {
+                    Trace.WriteLine($"{GetDateTime()} - Retry: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode 429. Waiting...<br />");
                     await Task.Delay(TimeSpan.FromSeconds(30));
                     continue;
                 }
@@ -172,20 +179,20 @@ abstract class BookmarksImporterBase : IDisposable
                 {
                     using (_lock.EnterScope())
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} {FailMarker(i)} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) StatusCode {statusCode} {FailMarker(DOWNLOAD_RETRY_COUNT - 1)} <br />");
                     }
                     break;
                 }
 
                 if
                 (
-                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("text") is false ||
+                     httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("text") is false &&
                      httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
                 )
                 {
                     using (_lock.EnterScope())
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Wrong Content-Type {FailMarker(i)} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Wrong Content-Type {FailMarker(DOWNLOAD_RETRY_COUNT - 1)} <br />");
                     }
 
                     break;
@@ -226,7 +233,7 @@ abstract class BookmarksImporterBase : IDisposable
                 {
                     using (_lock.EnterScope())
                     {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre.Message} {FailMarker(i)} {hre} --- with InnerException: --- {hre.InnerException?.ToString()} <br />");
+                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) No status code {hre.Message} {FailMarker(i)} {hre} --- with InnerException: --- {hre.InnerException?.Message} <br />");
                     }
                 }
 
@@ -402,6 +409,7 @@ abstract class BookmarksImporterBase : IDisposable
 
     public static class Constants
     {
+        public const string SCRAPER_URL = "https://r.jina.ai";
         public const string DEFAULTHTTPCLIENT = nameof(DEFAULTHTTPCLIENT);
         public const int DEFAULT_BOOKMARKS_LIST_CAPACITY = 5000;
         public const int WAIT_TIMEOUT_FOR_LYNX = 1000;
