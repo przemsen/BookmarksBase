@@ -49,7 +49,7 @@ services.AddHttpClient(
         c.DefaultRequestHeaders.CacheControl = new() { NoCache = true };
 
         c.Timeout = TimeSpan.FromMilliseconds(settingsDownloader.Timeout);
-        c.DefaultRequestVersion = HttpVersion.Version30;
+        c.DefaultRequestVersion = HttpVersion.Version20;
         c.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
     })
     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
@@ -95,7 +95,8 @@ var options = new BookmarksImporterBase.Options(
         ) ?? Enumerable.Empty<BookmarksImporterBase.StealCookie>(),
         PlacesFilePath: settingsGeneral.PlacesFilePath,
         CookiesFilePath: settingsGeneral.CookiesFilePath,
-        NodeJSFilePath: settingsDownloader.NodeJSPath
+        NodeJSFilePath: settingsDownloader.NodeJSPath,
+        ScraperApiKey: settingsDownloader.ScraperApiKey
     );
 
 try

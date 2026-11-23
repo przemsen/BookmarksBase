@@ -9,6 +9,7 @@ class DownloaderSettings
     public List<string> ExceptionalUrls { get; set; }
     public string TempDir { get; set; }
     public string NodeJSPath { get; set; }
+    public string ScraperApiKey { get; set; }
 }
 
 class GeneralSettings

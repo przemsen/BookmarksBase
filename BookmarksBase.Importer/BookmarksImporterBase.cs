@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Resources;
 using System.Runtime;
 using System.Text;
 using System.Threading;
@@ -41,7 +42,8 @@ abstract class BookmarksImporterBase : IDisposable
         string PlacesFilePath,
         string CookiesFilePath,
         string NodeJSFilePath,
-        IEnumerable<StealCookie> CookieStealings
+        IEnumerable<StealCookie> CookieStealings,
+        string ScraperApiKey
     );
 
     public union DownloadResult(FileDownloadedResult, AlternativeContentsResult, FailedDownloadResult);
@@ -140,6 +142,17 @@ abstract class BookmarksImporterBase : IDisposable
                     requestMessage.Headers.Add("Cookie", _cookies[cookiesKey]);
                     httpResponse = await httpClient.SendAsync(requestMessage);
                 }
+                else if (url.StartsWith(SCRAPER_URL) && !string.IsNullOrEmpty(_options.ScraperApiKey))
+                {
+                    using var requestMessage = new HttpRequestMessage(HttpMethod.Get, url)
+                    {
+                        Version = httpClient.DefaultRequestVersion,
+                        VersionPolicy = httpClient.DefaultVersionPolicy
+                    };
+
+                    requestMessage.Headers.Add("Authorization", $"Bearer {_options.ScraperApiKey}");
+                    httpResponse = await httpClient.SendAsync(requestMessage);
+                }
                 else
                 {
                     httpResponse = await httpClient.GetAsync(url);
@@ -190,11 +203,7 @@ abstract class BookmarksImporterBase : IDisposable
                      httpResponse?.Content?.Headers?.ContentType?.MediaType.Contains("html") is false
                 )
                 {
-                    using (_lock.EnterScope())
-                    {
-                        _errLog.Add($"{GetDateTime()} ERROR: <a href=\"{url}\">{url}</a> ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Wrong Content-Type {FailMarker(DOWNLOAD_RETRY_COUNT - 1)} <br />");
-                    }
-
+                    Trace.WriteLine($"{GetDateTime()} - Skipped: {url} ({i + 1}/{DOWNLOAD_RETRY_COUNT}) Not text/html content <br />");
                     break;
                 }
 
